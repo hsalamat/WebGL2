@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+   <head>
+     <title>A Simple WebGL2 Canvas Example including style</title>
+
+      <style>
+         body {
+            background: #dddddd;
+         }
+         #canvas {
+            margin: 10px;
+            padding: 10px;
+            background: #ffffff;
+            border: thin inset #aaaaaa;
+         }
+      </style>
+   </head>
+
+  <body>
+    <canvas id='myGLCanvas' width='600' height='300'>
+      Canvas not supported
+    </canvas>
+
+		<script>
+			var canvas = document.getElementById('myGLCanvas'),
+			//WebGL 2 is an extension to WebGL 1. The WebGL2RenderingContext interface implements all members of the WebGLRenderingContext interface. Some methods of the WebGL 1 context can accept additional values when used in a WebGL 2 context.
+			//    Feature	    Chrome	Edge	Firefox	IE     	Opera	Safari  Mobile
+			//  Basic Support	56     	No	   51.0	  No	      43	    No  No
+			gl = canvas.getContext("webgl2");
+			//The WebGL2RenderingContext.clearColor() method of the WebGL API specifies the color values used when clearing color buffers.
+			//This specifies what color values to use when calling the clear() method. The values are clamped between 0 and 1.
+			//GLclampf	unrestricted float	Clamped 32-bit IEEE floating point number.
+			gl.clearColor(1,0,0,1);
+			//The COLOR_BUFFER_BIT constant indicates the buffers currently enabled for color writing.
+			//gl.clear(gl.COLOR_BUFFER_BIT);
+			// Clears the color and depth buffers
+			//gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+			// Clears the color, depth and stencil buffers
+			//gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+			//The stencil buffer is an optional extension of the depth buffer that gives you more control over the question of which fragments should be drawn and which shouldn't. Like the depth buffer, a value is stored for every pixel, but this time you get to control when and how this value changes and when a fragment should be drawn depending on this value.
+
+			console.log("WebGL Version: ");
+			console.log(gl.getParameter(gl.VERSION));
+			console.log("GLSL Version: ");
+			console.log(gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
+			console.log("Vendor: ");
+			console.log(gl.getParameter(gl.VENDOR));
+      console.log("Current viewport");
+      console.log(gl.getParameter(gl.VIEWPORT));
+      console.log("Max viewport Dimensions")
+      console.log(gl.getParameter(gl.MAX_VIEWPORT_DIMS));
+		</script>
+  </body>
+</html>

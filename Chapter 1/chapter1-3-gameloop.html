@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Minimum Animation Example</title>
+</head>
+	<canvas id='myGLCanvas'></canvas>
+	<p id="demo">
+	<script>
+	//By default, the browser creates canvas elements with a width of 300 pixels and a height of 150 pixels.
+		var canvas = document.getElementById('myGLCanvas');
+		var gl = canvas.getContext('webgl2'); //The WebGL2RenderingContext interface provides the OpenGL ES 3.0 rendering context for the drawing surface of an HTML <canvas> element.
+		gl.clearColor(1,0,0,1); 	//The WebGL2RenderingContext.clearColor() method of the WebGL API specifies the color values used when clearing color buffers.
+		render();
+
+		function render(){
+			gl.clear(gl.COLOR_BUFFER_BIT); 	//The COLOR_BUFFER_BIT constant indicates the buffers currently enabled for color writing.
+			window.requestAnimationFrame(render); //The window.requestAnimationFrame() method tells the browser that you wish to perform an animation and requests that the browser call a specified function to update an animation before the next repaint.
+		}
+
+
+		window.onresize = function(){
+		    var min = innerWidth;
+		    if(innerHeight < min){
+		        min = innerHeight ;
+		    }
+		    if(min < canvas.width || min < canvas.height){
+						//The viewport is the user's visible area of a web page.
+		        gl.viewport(0,canvas.height-min,min,min) //viewport(x, y, width, height); specifies the affine transformation of x and y from normalized device coordinates to window coordinates.
+						//console.log(innerWidth,innerHeight);
+		    }
+		}
+
+		canvas.addEventListener("mousedown", function (event) {
+			  console.log("mouse is down");
+				console.log(event.clientX, event.clientY);
+    });
+
+    canvas.addEventListener("mouseup", function (event) {
+					console.log(event.clientX, event.clientY);
+          console.log("mouse is up");
+    });
+
+		canvas.addEventListener("mouseover", function(event){
+			console.log(event.clientX, event.clientY);
+		}
+	);
+
+		canvas.addEventListener("click", function(){
+		  document.getElementById("demo").innerHTML = "Hello WebGL2"; //Click on the canvas
+		});
+
+
+	</script>
+</html>

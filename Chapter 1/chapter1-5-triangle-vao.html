@@ -1,0 +1,122 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <title>Create a triangle using vertex array</title>
+    <meta charset="utf-8">
+    <script type="text/javascript">
+        var gl;
+        var canvas;
+        var shaderProgram;
+        var vertexBuffer;
+		var vertexArray;
+
+        function createGLContext(canvas) {
+            var context = null;
+                try {
+                    context = canvas.getContext("webgl2");
+                } catch (e) {
+				alert("Failed to create WebGL2 context!");
+				}
+
+            if (context) {
+                context.viewportWidth = canvas.width;
+                context.viewportHeight = canvas.height;
+           }
+            return context;
+        }
+
+        function loadShader(type, shaderSource) {
+            var shader = gl.createShader(type);
+            gl.shaderSource(shader, shaderSource);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                alert("Error compiling shader" + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        function setupShaders() {
+            let vertexShaderSource = `#version 300 es
+               in vec3 aVertexPosition;
+               void main() {
+                gl_Position = vec4(aVertexPosition, 1.0);
+              }
+			  `;
+
+            let fragmentShaderSource = `#version 300 es
+               precision mediump float;
+
+				out vec4 finalColor;
+               void main() {
+                finalColor = vec4(1.0, 0.0, 1.0, 1.0);
+               }
+			   `;
+
+            var vertexShader = loadShader(gl.VERTEX_SHADER, vertexShaderSource);
+            var fragmentShader = loadShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+            shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                alert("Failed to setup shaders");
+            }
+
+            gl.useProgram(shaderProgram);
+
+            shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        }
+
+        function setupBuffers() {
+
+			vertexBuffer = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            var triangleVertices = [
+                   0.0, 0.5, 0.0,
+                  -0.5, -0.5, 0.0,
+                   0.5, -0.5, 0.0
+            ];
+            //'usage' parameter can be: STREAM_DRAW, STATIC_DRAW or DYNAMIC_DRAW
+            //Static for often used and never changed - Dynamic for often used and changed - Stream for never used again
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = 3;
+
+			vertexArray = gl.createVertexArray();
+			gl.bindVertexArray(vertexArray);
+			gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+			gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+			gl.bindVertexArray(null);
+        }
+
+        function draw() {
+            gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+			gl.bindVertexArray(vertexArray);
+            gl.drawArrays(gl.TRIANGLES, 0, vertexBuffer.numberOfItems);
+			gl.bindVertexArray(null);
+        }
+
+        function startup() {
+            canvas = document.getElementById("myGLCanvas");
+            gl = createGLContext(canvas);
+            setupShaders();
+            setupBuffers();
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            draw();
+        }
+    </script>
+
+</head>
+
+<body onload="startup();">
+    <canvas id="myGLCanvas" width="500" height="500"></canvas>
+</body>
+
+</html>
