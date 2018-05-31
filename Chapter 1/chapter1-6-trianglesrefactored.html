@@ -52,31 +52,6 @@
 
 		</script>
 		<script name="Shaders.js">
-		class Shader{
-			constructor(gl,vertShaderSrc,fragShaderSrc){
-				this.program = ShaderUtil.createProgramFromText(gl,vertShaderSrc,fragShaderSrc,true);
-
-				if(this.program != null){
-					this.gl = gl;
-					gl.useProgram(this.program);
-					this.vertexPositionAttribute = gl.getAttributeLocation(this.program,"aVertexPosition");
-				}
-			}
-
-			//...................................................
-			//Methods
-			activate(){ this.gl.useProgram(this.program); return this; }
-			deactivate(){ this.gl.useProgram(null); return this; }
-
-			//function helps clean up resources when shader is no longer needed.
-			dispose(){
-				//unbind the program if its currently active
-				if(this.gl.getParameter(this.gl.CURRENT_PROGRAM) === this.program) this.gl.useProgram(null);
-				this.gl.deleteProgram(this.program);
-			}
-
-		}
-
 
 		class ShaderUtil{
 			static domShaderSrc(elmID){
@@ -192,8 +167,8 @@
 
 				//how its done without VAOs
 				gl.bindBuffer(gl.ARRAY_BUFFER,bufVerts);					//Tell gl which buffer we want to use at the moment
-				gl.enableVertexAttribArray(shaderProg.vertexPositionAttribute);					//Enable the position attribute in the shader
-				gl.vertexAttribPointer(shaderProg.vertexPositionAttribute,3,gl.FLOAT,false,0,0);	//Set which buffer the attribute will pull its data from
+				gl.enableVertexAttribArray(aPositionLoc);					//Enable the position attribute in the shader
+				gl.vertexAttribPointer(aPositionLoc,3,gl.FLOAT,false,0,0);	//Set which buffer the attribute will pull its data from
 				gl.bindBuffer(gl.ARRAY_BUFFER,null);						//Done setting up the buffer
 
 				this.gl.drawArrays(gl.TRIANGLES, 0, 3);						//Draw the triangle
