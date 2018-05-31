@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
    <head>
-     <title>A Simple WebGL2 Canvas Example including style</title>
+     <title>Display WebGL and GLSL versions using getParameter</title>
 
       <style>
          body {
@@ -32,7 +32,7 @@
 			//GLclampf	unrestricted float	Clamped 32-bit IEEE floating point number.
 			gl.clearColor(1,0,0,1);
 			//The COLOR_BUFFER_BIT constant indicates the buffers currently enabled for color writing.
-			//gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.clear(gl.COLOR_BUFFER_BIT);
 			// Clears the color and depth buffers
 			//gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 			// Clears the color, depth and stencil buffers
@@ -45,10 +45,10 @@
 			console.log(gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
 			console.log("Vendor: ");
 			console.log(gl.getParameter(gl.VENDOR));
-      console.log("Current viewport");
-      console.log(gl.getParameter(gl.VIEWPORT));
-      console.log("Max viewport Dimensions")
-      console.log(gl.getParameter(gl.MAX_VIEWPORT_DIMS));
+            console.log("Current viewport");
+            console.log(gl.getParameter(gl.VIEWPORT));
+            console.log("Max viewport Dimensions")
+            console.log(gl.getParameter(gl.MAX_VIEWPORT_DIMS));
 		</script>
   </body>
 </html>
