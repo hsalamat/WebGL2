@@ -1,225 +1,242 @@
 ﻿<!DOCTYPE html>
 <html>
-	<head>
-		<style>
-			html,body{margin:0px; padding:0px; width:100%; height:100%;}
-			body{background-color:#404040;}
+<head>
+    <style>
+        html, body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+        }
 
-			canvas{border:1px solid black;}
-			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
-		</style>
+        body {
+            background-color: #404040;
+        }
 
-		<script name="gl.js">
-		function GLInstance(canvasID) {
-		    var canvas = document.getElementById(canvasID),
-		        gl = canvas.getContext("webgl2");
+        canvas {
+            border: 1px solid black;
+        }
 
-		    if (!gl) { console.error("WebGL context2 is not available."); return null; }
-		    gl.clearColor(1.0, 1.0, 1.0, 1.0);
-		    gl.fClear = function () { this.clear(this.COLOR_BUFFER_BIT | this.DEPTH_BUFFER_BIT); return this; }
+        div {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
 
-		    //Create and fill our Array buffer.
-		    gl.fCreateArrayBuffer = function (floatAry, isStatic) {
-		        if (isStatic === undefined) isStatic = true; //So we can call this function without setting isStatic
+    <script name="gl.js">
+        function GLInstance(canvasID) {
+            var canvas = document.getElementById(canvasID),
+                gl = canvas.getContext("webgl2");
 
-		        var buf = this.createBuffer();
-		        this.bindBuffer(this.ARRAY_BUFFER, buf);
-		        this.bufferData(this.ARRAY_BUFFER, floatAry, (isStatic) ? this.STATIC_DRAW : this.DYNAMIC_DRAW);
-		        this.bindBuffer(this.ARRAY_BUFFER, null);
-		        return buf;
-		    }
+            if (!gl) { console.error("WebGL context2 is not available."); return null; }
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);
+            gl.fClear = function () { this.clear(this.COLOR_BUFFER_BIT | this.DEPTH_BUFFER_BIT); return this; }
 
-				gl.fSetSize = function (w, h) {
-						//set the size of the canvas, on chrome we need to set it 3 ways to make it work perfectly.
-						this.canvas.style.width = w + "px";
-						this.canvas.style.height = h + "px";
-						this.canvas.width = w;
-						this.canvas.height = h;
+            //Create and fill our Array buffer.
+            gl.fCreateArrayBuffer = function (floatAry, isStatic) {
+                if (isStatic === undefined) isStatic = true; //So we can call this function without setting isStatic
 
-						//when updating the canvas size, must reset the viewport of the canvas
-						//else the resolution webgl renders at will not change
-						this.viewport(0, 0, w, h);
-						return this;
-				}
+                var buf = this.createBuffer();
+                this.bindBuffer(this.ARRAY_BUFFER, buf);
+                this.bufferData(this.ARRAY_BUFFER, floatAry, (isStatic) ? this.STATIC_DRAW : this.DYNAMIC_DRAW);
+                this.bindBuffer(this.ARRAY_BUFFER, null);
+                return buf;
+            }
 
-		    return gl;
-		}
+            gl.fSetSize = function (w, h) {
+                //set the size of the canvas, on chrome we need to set it 3 ways to make it work perfectly.
+                this.canvas.style.width = w + "px";
+                this.canvas.style.height = h + "px";
+                this.canvas.width = w;
+                this.canvas.height = h;
 
-		</script>
-		<script name="Shaders.js">
+                //when updating the canvas size, must reset the viewport of the canvas
+                //else the resolution webgl renders at will not change
+                this.viewport(0, 0, w, h);
+                return this;
+            }
 
-		class ShaderUtil{
-			static domShaderSrc(elmID){
-				var elm = document.getElementById(elmID);
-				if(!elm || elm.text == ""){ console.log(elmID + " shader not found or no text."); return null; }
+            return gl;
+        }
 
-				return elm.text;
-			}
+    </script>
+    <script name="Shaders.js">
 
-			//Create a shader by passing in its code and what type
-			static createShader(gl,src,type){
-				var shader = gl.createShader(type);
-				gl.shaderSource(shader,src);
-				gl.compileShader(shader);
+        class ShaderUtil {
+            static domShaderSrc(elmID) {
+                var elm = document.getElementById(elmID);
+                if (!elm || elm.text == "") { console.log(elmID + " shader not found or no text."); return null; }
 
-				//Get Error data if shader failed compiling
-				if(!gl.getShaderParameter(shader, gl.COMPILE_STATUS)){
-					console.error("Error compiling shader : " + src, gl.getShaderInfoLog(shader));
-					gl.deleteShader(shader);
-					return null;
-				}
+                return elm.text;
+            }
 
-				return shader;
-			}
+            //Create a shader by passing in its code and what type
+            static createShader(gl, src, type) {
+                var shader = gl.createShader(type);
+                gl.shaderSource(shader, src);
+                gl.compileShader(shader);
 
-			//Link two compiled shaders to create a program for rendering.
-			static createProgram(gl,vShader,fShader,doValidate){
-				//Link shaders together
-				var prog = gl.createProgram();
-				gl.attachShader(prog,vShader);
-				gl.attachShader(prog,fShader);
+                //Get Error data if shader failed compiling
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    console.error("Error compiling shader : " + src, gl.getShaderInfoLog(shader));
+                    gl.deleteShader(shader);
+                    return null;
+                }
 
-				gl.linkProgram(prog);
+                return shader;
+            }
 
-				//Check if successful
-				if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
-					console.error("Error creating shader program.",gl.getProgramInfoLog(prog));
-					gl.deleteProgram(prog); return null;
-				}
+            //Link two compiled shaders to create a program for rendering.
+            static createProgram(gl, vShader, fShader, doValidate) {
+                //Link shaders together
+                var prog = gl.createProgram();
+                gl.attachShader(prog, vShader);
+                gl.attachShader(prog, fShader);
 
-				//Only do this for additional debugging.
-				if(doValidate){
-					gl.validateProgram(prog);
-					if(!gl.getProgramParameter(prog,gl.VALIDATE_STATUS)){
-						console.error("Error validating program", gl.getProgramInfoLog(prog));
-						gl.deleteProgram(prog); return null;
-					}
-				}
+                gl.linkProgram(prog);
 
-				//Can delete the shaders since the program has been made.
-				gl.detachShader(prog,vShader);
-				gl.detachShader(prog,fShader);
-				gl.deleteShader(fShader);
-				gl.deleteShader(vShader);
+                //Check if successful
+                if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+                    console.error("Error creating shader program.", gl.getProgramInfoLog(prog));
+                    gl.deleteProgram(prog); return null;
+                }
 
-				return prog;
-			}
+                //Only do this for additional debugging.
+                if (doValidate) {
+                    gl.validateProgram(prog);
+                    if (!gl.getProgramParameter(prog, gl.VALIDATE_STATUS)) {
+                        console.error("Error validating program", gl.getProgramInfoLog(prog));
+                        gl.deleteProgram(prog); return null;
+                    }
+                }
+
+                //Can delete the shaders since the program has been made.
+                gl.detachShader(prog, vShader);
+                gl.detachShader(prog, fShader);
+                gl.deleteShader(fShader);
+                gl.deleteShader(vShader);
+
+                return prog;
+            }
 
 
 
-			//Pass in Script Tag IDs for our two shaders and create a program from it.
-			static domShaderProgram(gl,vectID,fragID,doValidate){
-				var vShaderTxt	= ShaderUtil.domShaderSrc(vectID);								if(!vShaderTxt)	return null;
-				var fShaderTxt	= ShaderUtil.domShaderSrc(fragID);								if(!fShaderTxt)	return null;
-				var vShader		= ShaderUtil.createShader(gl,vShaderTxt,gl.VERTEX_SHADER);		if(!vShader)	return null;
-				var fShader		= ShaderUtil.createShader(gl,fShaderTxt,gl.FRAGMENT_SHADER);	if(!fShader){	gl.deleteShader(vShader); return null; }
+            //Pass in Script Tag IDs for our two shaders and create a program from it.
+            static domShaderProgram(gl, vectID, fragID, doValidate) {
+                var vShaderTxt = ShaderUtil.domShaderSrc(vectID); if (!vShaderTxt) return null;
+                var fShaderTxt = ShaderUtil.domShaderSrc(fragID); if (!fShaderTxt) return null;
+                var vShader = ShaderUtil.createShader(gl, vShaderTxt, gl.VERTEX_SHADER); if (!vShader) return null;
+                var fShader = ShaderUtil.createShader(gl, fShaderTxt, gl.FRAGMENT_SHADER); if (!fShader) { gl.deleteShader(vShader); return null; }
 
-				return ShaderUtil.createProgram(gl,vShader,fShader,true);
-			}
+                return ShaderUtil.createProgram(gl, vShader, fShader, true);
+            }
 
-			static createProgramFromText(gl,vShaderTxt,fShaderTxt,doValidate){
-				var vShader		= ShaderUtil.createShader(gl,vShaderTxt,gl.VERTEX_SHADER);		if(!vShader)	return null;
-				var fShader		= ShaderUtil.createShader(gl,fShaderTxt,gl.FRAGMENT_SHADER);	if(!fShader){	gl.deleteShader(vShader); return null; }
+            static createProgramFromText(gl, vShaderTxt, fShaderTxt, doValidate) {
+                var vShader = ShaderUtil.createShader(gl, vShaderTxt, gl.VERTEX_SHADER); if (!vShader) return null;
+                var fShader = ShaderUtil.createShader(gl, fShaderTxt, gl.FRAGMENT_SHADER); if (!fShader) { gl.deleteShader(vShader); return null; }
 
-				return ShaderUtil.createProgram(gl,vShader,fShader,true);
-			}
+                return ShaderUtil.createProgram(gl, vShader, fShader, true);
+            }
 
-			static getStandardAttribLocations(gl,program){
-				return {
-					position:	gl.getAttribLocation(program,ATTR_POSITION_NAME),
-				};
-			}
-		}
-		</script>
-		<script>
-			var gl;
-			var vertexArray;
-			var vertexBuffer;
-			var shaderProg;
-			var vColor;
+            static getStandardAttribLocations(gl, program) {
+                return {
+                    position: gl.getAttribLocation(program, ATTR_POSITION_NAME),
+                };
+            }
+        }
+    </script>
+    <script>
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var shaderProg;
+        var vColor;
 
-			window.addEventListener("load",function(){
-				//............................................
-				//Get our extended GL Context Object
-				gl = GLInstance("myGLCanvas").fSetSize(500,500).fClear();
+        window.addEventListener("load", function () {
+            //............................................
+            //Get our extended GL Context Object
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
 
-      	setupShaders()
-				setupBuffers()
-				draw();					//Draw the triangle
-			});
+            setupShaders()
+            setupBuffers()
+            draw();					//Draw the triangle
+        });
 
-			function setupShaders() {
-				shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
-				gl.useProgram(shaderProg);				//Activate the Shader
-				//Get Location of Uniforms and Attributes.
-				shaderProg.aPositionLoc	= gl.getAttribLocation(shaderProg,"a_position"),
-				shaderProg.uPointSizeLoc	= gl.getUniformLocation(shaderProg,"uPointSize");				//Activate the Shader
-				gl.uniform1f(shaderProg.uPointSizeLoc,50.0);		//Store data to the shader's uniform variable uPointSize
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);				//Activate the Shader
+            //Get Location of Uniforms and Attributes.
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position"),
+                shaderProg.uPointSizeLoc = gl.getUniformLocation(shaderProg, "uPointSize");				//Activate the Shader
+            gl.uniform1f(shaderProg.uPointSizeLoc, 50.0);		//Store data to the shader's uniform variable uPointSize
 
-				vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
+            vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
 
-				gl.useProgram(null);
+            gl.useProgram(null);
 
-				}
+        }
 
-		function setupBuffers() {
+        function setupBuffers() {
 
-		vertexBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-		var vertices = [
-			-0.5, -0.5,
-			-0.5,  0.5,
-		 	 0.5,  0.5,
-		 	 0.5, -0.5,
-			 0.5, -0.5,
-			 0.5,  0.5
-			];
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-		vertexBuffer.itemSize = 2;
-		vertexBuffer.numberOfItems = 6;
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            var vertices = [
+                -0.5, -0.5,
+                -0.5, 0.5,
+                0.5, 0.5,
+                0.5, -0.5,
+                0.5, -0.5,
+                0.5, 0.5
+            ];
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+            vertexBuffer.itemSize = 2;
+            vertexBuffer.numberOfItems = 6;
 
-		gl.useProgram(shaderProg);
+            gl.useProgram(shaderProg);
 
-		vertexArray = gl.createVertexArray();
-		gl.bindVertexArray(vertexArray);
-		gl.enableVertexAttribArray(shaderProg.aPositionLoc);
-		gl.vertexAttribPointer(shaderProg.aPositionLoc, 2, gl.FLOAT, false, 0, 0);
-		gl.bindVertexArray(null);
-		}
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 2, gl.FLOAT, false, 0, 0);
+            gl.bindVertexArray(null);
+        }
 
-		function draw() {
-					gl.bindVertexArray(vertexArray);
-					gl.disableVertexAttribArray(vColor);
-			    gl.vertexAttrib4f(vColor, 1.0, 1.0, 0.0, 1.0);
-			    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-			    gl.vertexAttrib4f(vColor, 1.0, 0.0, 0.0, 1.0);
-			    gl.drawArrays(gl.LINE_LOOP, 0, 3);
-			    gl.vertexAttrib4f(vColor, 0.0, 0.0, 1.0, 1.0);
-			    gl.drawArrays(gl.LINE_LOOP, 1, 3);
-					gl.bindVertexArray(null);
-		}
-		</script>
-	</head>
+        function draw() {
+            gl.bindVertexArray(vertexArray);
+            gl.disableVertexAttribArray(vColor);
+            gl.vertexAttrib4f(vColor, 1.0, 1.0, 0.0, 1.0);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            gl.vertexAttrib4f(vColor, 1.0, 0.0, 0.0, 1.0);
+            gl.drawArrays(gl.LINE_LOOP, 0, 3);
+            gl.vertexAttrib4f(vColor, 0.0, 0.0, 1.0, 1.0);
+            gl.drawArrays(gl.LINE_LOOP, 1, 3);
+            gl.bindVertexArray(null);
+        }
+    </script>
+</head>
 <body>
-	<div>
-		<canvas id="myGLCanvas"></canvas>
-	</div>
+    <div>
+        <canvas id="myGLCanvas"></canvas>
+    </div>
 
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
         in vec3 a_position;
-				in vec4 vColorAttr;
-				out vec4 vColor;
+        in vec4 vColorAttr;
+        out vec4 vColor;
         uniform float uPointSize;
 
         void main(void){
         gl_PointSize = uPointSize;
         gl_Position = vec4(a_position, 1.0);
-				 vColor = vColorAttr;
+        vColor = vColorAttr;
         }
     </script>
     <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
         precision mediump float;
-				in vec4 vColor;
+        in vec4 vColor;
         out vec4 finalColor;
 
         void main(void) {
