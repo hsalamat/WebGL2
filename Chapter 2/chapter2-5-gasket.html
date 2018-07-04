@@ -64,53 +64,39 @@
         function setupVertices() {
 
             var NumPoints = 50000;
-            var p, points = [];
+            var myVerts, u, v, p, points=[], vertices= [];
 
             // First, initialize the corners of our gasket with three points.
-            var vertices = [];
-            var aryVerts;
             // Specify a starting point p for our iterations
             // p must lie inside any set of three vertices
-            a = new Float32Array([-1, -1, 0])
-            b = new Float32Array([0, 1, 0,]);
-            c = new Float32Array([1, -1, 0]);
+            vertices[0] = vec3.clone([-1, -1, 0])
+            vertices[1] = vec3.clone([0, 1, 0,]);
+            vertices[2] = vec3.clone([1, -1, 0]);
             u = vec3.create();
             v = vec3.create();
             p = vec3.create();
-            vertices[0] = a;
-            vertices[1] = b;
-            vertices[2] = c;
 
-            vec3.add(u, a, b);
-            vec3.add(v, a, c);
+            vec3.add(u, vertices[0], vertices[1]);
+            vec3.add(v, vertices[0], vertices[2]);
             vec3.add(p, u, v);
             vec3.scale(p, p, 0.5);
 
             // And, add our initial point into our array of points
-
-            points = [p];
+            //The three dots or spread operator is used for array construction and destructuring
+            points.push(...p);
 
             // Compute new points
             // Each new point is located midway between
             // last point and a randomly chosen vertex
 
             for (var i = 0; points.length < NumPoints; ++i) {
-                p = vec3.create();
                 var j = Math.floor(Math.random() * 3);
-                vec3.add(p, points[i], vertices[j]);
+                vec3.add(p, p, vertices[j]);
                 vec3.scale(p, p, 0.5);
-                points.push(p);
+                points.push(...p);
             }
 
-
-            myVerts = new Float32Array(points.length * 3);
-
-            var idx = 0;
-            for (var i = 0; i < points.length; ++i) {
-                for (var j = 0; j < points[i].length; ++j) {
-                    myVerts[idx++] = points[i][j];
-                }
-            }
+            myVerts = new Float32Array(points);
 
             return myVerts;
 
