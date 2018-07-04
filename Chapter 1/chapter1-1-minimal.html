@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>A smallest WebGL2 example</title>
+    <title>A smallest WebGL2 example</title>
 </head>
-	<canvas id='myGLCanvas'></canvas>
-	<script>
-	//By default, the browser creates canvas elements with a width of 300 pixels and a height of 150 pixels.
-		var c = document.getElementById('myGLCanvas');
-		var gl = c.getContext('webgl2');
-		gl.clearColor(1,0,0,1);
-		gl.clear(gl.COLOR_BUFFER_BIT);
-	</script>
+<body>
+    <canvas id='myGLCanvas'></canvas>
+    <script>
+        //By default, the browser creates canvas elements with a width of 300 pixels and a height of 150 pixels.
+        var c = document.getElementById('myGLCanvas');
+        var gl = c.getContext('webgl2');
+        gl.clearColor(1, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    </script>
+</body>
 </html>
