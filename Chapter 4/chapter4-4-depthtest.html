@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>Colored Cube</title>
+    <title>Depth Test</title>
     <style>
         html, body {
             margin: 0px;
@@ -47,7 +47,7 @@
             //............................................
             //Get our extended GL Context Object
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
-
+            gl.enable(gl.DEPTH_TEST);
             setupShaders()
             setupBuffers()
             draw();					//Draw the triangle
