@@ -1,0 +1,180 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Decagonal Pyramid</title>
+    <style>
+        html, body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: #404040;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        div {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+
+    <script>
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var stripElementBuffer;
+        var shaderProg;
+        var vColor;
+        var color = [];
+        var vertices = [];
+        var indices = [];
+
+        window.addEventListener("load", function () {
+            //............................................
+            //Get our extended GL Context Object
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            gl.enable(gl.DEPTH_TEST);
+            setupShaders()
+            setupBuffers()
+            draw();					//Draw the triangle
+        });
+
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);				//Activate the Shader
+            //Get Location of Uniforms and Attributes.
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position"),
+            shaderProg.uColor = gl.getUniformLocation(shaderProg, "uColor");
+
+            gl.useProgram(null);
+
+        }
+
+        function setupVertices() {
+          color = [0.8, 0.2, 0.7];
+
+          vertices = [0.75, 0, 0,
+              -0.75, 0.5, 0,
+              -0.75, 0.4045085, 0.2938925,
+              -0.75, 0.1545085, 0.4755285,
+              -0.75, -0.1545085, 0.4755285,
+              -0.75, -0.4045085, 0.2938925,
+              -0.75, -0.5, 0,
+              -0.75, -0.4045085, -0.2938925,
+              -0.75, -0.1545085, -0.4755285,
+              -0.75, 0.1545085, -0.4755285,
+              -0.75, 0.4045085, -0.2938925];
+
+          indices = [0, 1, 2,
+              0, 2, 3,
+              0, 3, 4,
+              0, 4, 5,
+              0, 5, 6,
+              0, 6, 7,
+              0, 7, 8,
+              0, 8, 9,
+              0, 9, 10,
+              0, 10, 1];
+
+        }
+
+
+        function setupBuffers() {
+
+            vertexBuffer = gl.createBuffer();
+            setupVertices();
+
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = vertices.length / 3;
+
+            colorBuffer = gl.createBuffer();
+
+            gl.useProgram(shaderProg);
+
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+
+            stripElementBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, stripElementBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+            gl.uniform3f(shaderProg.uColor, color[0], color[1], color[2]);
+            gl.bindVertexArray(null);
+        }
+
+        function draw() {
+          gl.bindVertexArray(vertexArray);
+          gl.drawElements(gl.LINE_STRIP, 30, gl.UNSIGNED_SHORT, 0);
+          gl.bindVertexArray(null);
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <canvas id="myGLCanvas"></canvas>
+    </div>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+
+        void main(void){
+          vec3 theta = vec3(-135,-135,-135);
+          vec3 angles = radians( theta );
+          vec3 c = cos( angles );
+          vec3 s = sin( angles );
+
+          // Remeber: thse matrices are column-major
+          mat4 rx = mat4( 1.0,  0.0,  0.0, 0.0,
+          0.0,  c.x,  s.x, 0.0,
+          0.0, -s.x,  c.x, 0.0,
+          0.0,  0.0,  0.0, 1.0 );
+
+          mat4 ry = mat4( c.y, 0.0, -s.y, 0.0,
+          0.0, 1.0,  0.0, 0.0,
+          s.y, 0.0,  c.y, 0.0,
+          0.0, 0.0,  0.0, 1.0 );
+
+
+          mat4 rz = mat4( c.z, s.z, 0.0, 0.0,
+          -s.z,  c.z, 0.0, 0.0,
+          0.0,  0.0, 1.0, 0.0,
+          0.0,  0.0, 0.0, 1.0 );
+
+        gl_Position = rz * ry * rx * vec4(a_position, 1.0);
+
+
+
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        uniform vec3 uColor;
+        out vec4 finalColor;
+
+        void main(void) {
+        finalColor = vec4(uColor, 1.0);
+        }
+    </script> gl_Position.z + 0.1;
+
+</body>
+</html>
