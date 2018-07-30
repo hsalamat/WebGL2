@@ -94,15 +94,15 @@
         /**
        * Creates an AJAX request to load a model asynchronously
        A new XMLHttpRequest object starts in state 0
-       When you successfully call .open() on the obect, the status changes to 1
+       When you successfully call .open() on the object, the status changes to 1
        When you successfully call .send() on the object, an HTTP request goes off to the server defined in .open(). Once the HTTP response headers have been received and processed the status changes to 2
        Eventually, the actual content of the request will start coming in. When this begins, the status changes to 3
        Finally, once all of the content is downloaded and is ready to be used, the status changes to 4
        */
         function loadModel(filename) {
             var request = new XMLHttpRequest();
-            //var resource = "http://" + document.domain + filename
-            var resource = 'Common/models/cone.json';
+            var resource = "http://" + document.domain + filename
+            var resource = 'Common/models/model1.json';
             request.open("GET", filename);
             request.onreadystatechange = function () {
                 console.info(request.readyState + ' - ' + request.status);
