@@ -46,7 +46,7 @@
 
         window.addEventListener("load", function () {
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
-
+            gl.enable(gl.DEPTH_TEST);
             setupShaders()
             setupBuffers()
             draw();					
@@ -97,7 +97,7 @@
             triangle( a, c, b, 0 );
             triangle( a, c, d, 1 );
             triangle( a, b, d, 2 );
-          //  triangle( b, c, d, 3 );
+            triangle( b, c, d, 3 );
         }
 
         function setupBuffers() {
