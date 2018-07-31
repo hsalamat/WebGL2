@@ -53,24 +53,14 @@
 
             setupShaders()
             setupBuffers()
-<<<<<<< HEAD
             draw();
-=======
-            draw();					
->>>>>>> d37292ce834a1c559332423d13f6c294a3993d54
         });
 
         function setupShaders() {
             shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
-<<<<<<< HEAD
             gl.useProgram(shaderProg);
             shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "vPositionAttr"),
-            shaderProg.uMovement = gl.getUniformLocation(shaderProg, "uMovement");
-=======
-            gl.useProgram(shaderProg);				
-            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "vPositionAttr"),
             shaderProg.uMovement = gl.getUniformLocation(shaderProg, "uMovement");            
->>>>>>> d37292ce834a1c559332423d13f6c294a3993d54
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
 
             gl.useProgram(null);
