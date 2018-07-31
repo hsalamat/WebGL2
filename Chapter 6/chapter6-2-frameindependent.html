@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <title>Frame Independent Animation</title>
@@ -49,16 +49,18 @@
         var PlayerSpeed = 0.000001;
 
         window.addEventListener("load", function () {
+            //............................................
+            //Get our extended GL Context Object
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
-
+            gl.enable(gl.DEPTH_TEST);
             setupShaders()
             setupBuffers()
-            draw();
+            draw();					
         });
 
         function setupShaders() {
             shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
-            gl.useProgram(shaderProg);
+            gl.useProgram(shaderProg);				
             shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "vPositionAttr"),
             shaderProg.uMovement = gl.getUniformLocation(shaderProg, "uMovement");            
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
@@ -100,7 +102,7 @@
             triangle(a, c, b, 0);
             triangle(a, c, d, 1);
             triangle(a, b, d, 2);
-            //  triangle( b, c, d, 3 );
+            triangle( b, c, d, 3 );
         }
 
         function setupBuffers() {
