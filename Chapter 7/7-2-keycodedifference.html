@@ -1,0 +1,31 @@
+﻿<html>
+<head>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript">$(document).ready(function() {
+
+            $('#textbox').keydown(function(event) {
+                var keycode = (event.keyCode ? event.keyCode : event.which);
+                $('#keydownCode').html(keycode);
+            });
+
+            $('#textbox').keypress(function(event) {
+                var keycode = (event.keyCode ? event.keyCode : event.which);
+                $('#keypressCode').html(keycode);
+            });
+
+});</script>
+</head>
+<body>
+    <h4>jQuery keydown() and keypress() difference</h4>
+
+    <label>TextBox : </label><input id="textbox" type="text" size="50" />
+
+    <div>
+        <label>keydown() detected keycode : </label><span id="keydownCode">0</span>.
+    </div>
+
+    <div>
+        <label>keypress() detected keycode : </label><span id="keypressCode">0</span>.
+    </div>
+</body>
+</html>
