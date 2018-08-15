@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Cube - Isometric View</title>
@@ -35,15 +35,14 @@
             gl.enable(gl.DEPTH_TEST);
             setupShaders()
             setupBuffers()
-            draw();					//Draw the triangle
+            draw();
         });
 
         function setupShaders() {
             shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
-            gl.useProgram(shaderProg);				//Activate the Shader
-            //Get Location of Uniforms and Attributes.
+            gl.useProgram(shaderProg);
             shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "vPositionAttr"),
-                shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
+            shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
 
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
             gl.useProgram(null);
@@ -141,7 +140,7 @@
             //2.0
             //Suppose that we want to look at the same object from the positive x-axis.
             //Now, not only do we have to move away from the object, but we also have to rotate
-            //the camera about the y- axis, as shown in Figure 5.14.We must do the translation
+            //the camera about the y- axis. We must do the translation
             //after we rotate the camera by 90 degrees about the y- axis.
             //mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -1]);
             //mat4.rotateY(modelViewMatrix, modelViewMatrix, glMatrix.toRadian(-90)); //clockwise rotation
