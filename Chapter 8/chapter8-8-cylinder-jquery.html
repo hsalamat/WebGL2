@@ -17,7 +17,8 @@
     <script src="Common/js/gl.js"></script>
     <script src="Common/js/shaders.js"></script>
     <script src="Common/js/gl-matrix.js"></script>
-
+    <script src="Common/js/jquery-3.3.1.min.js"></script>
+    <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
     <script>
         var gl;
         var vertexArray;
@@ -61,17 +62,6 @@
             shaderProg.projectionMatrixLoc = gl.getUniformLocation(shaderProg, "projectionMatrix");
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
             gl.useProgram(null);
-
-            // buttons to change viewing parameters
-
-            document.getElementById("Button1").onclick = function () { near *= 1.1; far *= 1.1; };
-            document.getElementById("Button2").onclick = function () { near *= 0.9; far *= 0.9; };
-            document.getElementById("Button3").onclick = function () { radiuseye *= 1.1; };
-            document.getElementById("Button4").onclick = function () { radiuseye *= 0.9; };
-            document.getElementById("Button5").onclick = function () { theta += dr; };
-            document.getElementById("Button6").onclick = function () { theta -= dr; };
-            document.getElementById("Button7").onclick = function () { phi += dr; };
-            document.getElementById("Button8").onclick = function () { phi -= dr; };
 
         }
 
@@ -185,6 +175,19 @@
             gl.bindVertexArray(null);
             requestAnimationFrame(draw);
         }
+    </script>
+    <script>
+        $(function () {
+            $("#Button1").click(function () { near *= 1.1; far *= 1.1; });
+            $("#Button2").click(function () { near *= 0.9; far *= 0.9; });
+            $("#Button3").click(function () { radiuseye *= 1.1; });
+            $("#Button4").click(function () { radiuseye *= 0.9; });
+            $("#Button5").click(function () { theta += dr; });
+            $("#Button6").click( function () { theta -= dr; });
+            $("#Button7").click( function () { phi += dr; });
+            $("#Button8").click(function () { phi -= dr; });
+
+        });
     </script>
 </head>
 <body>
