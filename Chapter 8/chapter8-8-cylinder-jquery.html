@@ -19,6 +19,8 @@
     <script src="Common/js/gl-matrix.js"></script>
     <script src="Common/js/jquery-3.3.1.min.js"></script>
     <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
+    <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
+    <link href='Common/css/style.css' type='text/css' rel='stylesheet' />
     <script>
         var gl;
         var vertexArray;
@@ -58,7 +60,7 @@
             shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
             gl.useProgram(shaderProg);
             shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "vPositionAttr"),
-            shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
+                shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
             shaderProg.projectionMatrixLoc = gl.getUniformLocation(shaderProg, "projectionMatrix");
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
             gl.useProgram(null);
@@ -123,8 +125,6 @@
                 vertexColors = vertexColors.concat([0.0, 1.0, 0.0]);// green
                 vertexColors = vertexColors.concat([0.0, 0.0, 1.0]);// blue
                 vertexColors = vertexColors.concat([1.0, 0.0, 1.0]);// magenta
-                //vertexColors = vertexColors([0.0, 1.0, 1.0]); // cyan
-                //vertexColors = vertexColors.concat([1.0, 1.0, 1.0]);// white
             }
         }
 
@@ -178,14 +178,22 @@
     </script>
     <script>
         $(function () {
-            $("#Button1").click(function () { near *= 1.1; far *= 1.1; });
-            $("#Button2").click(function () { near *= 0.9; far *= 0.9; });
-            $("#Button3").click(function () { radiuseye *= 1.1; });
-            $("#Button4").click(function () { radiuseye *= 0.9; });
-            $("#Button5").click(function () { theta += dr; });
-            $("#Button6").click( function () { theta -= dr; });
-            $("#Button7").click( function () { phi += dr; });
-            $("#Button8").click(function () { phi -= dr; });
+            $("#increaseZ-btn").button();
+            $("#increaseZ-btn").click(function () { near *= 1.1; far *= 1.1; });
+            $("#decreaseZ-btn").button();
+            $("#decreaseZ-btn").click(function () { near *= 0.9; far *= 0.9; });
+            $("#increaseRadius-btn").button();
+            $("#increaseRadius-btn").click(function () { radiuseye *= 1.1; });
+            $("#decreaseRadius-btn").button();
+            $("#decreaseRadius-btn").click(function () { radiuseye *= 0.9; });
+            $("#increaseTheta-btn").button();
+            $("#increaseTheta-btn").click(function () { theta += dr; });
+            $("#decreaseTheta-btn").button();
+            $("#decreaseTheta-btn").click(function () { theta -= dr; });
+            $("#increasePhi-btn").button();
+            $("#increasePhi-btn").click(function () { phi += dr; });
+            $("#decreasePhi-btn").button();
+            $("#decreasePhi-btn").click(function () { phi -= dr; });
 
         });
     </script>
@@ -194,15 +202,15 @@
     <div id="overlay">
         Interactive Orthographic viewing of Cylinder
         <p />
-        <button id="Button1">Increase Z</button>
-        <button id="Button2">Decrease Z</button>
-        <button id="Button3">Increase R</button>
-        <button id="Button4">Decrease R</button>
+        <button id="increaseZ-btn">Increase Z</button>
+        <button id="decreaseZ-btn">Decrease Z</button>
+        <button id="increaseRadius-btn">Increase R</button>
+        <button id="decreaseRadius-btn">Decrease R</button>
         <p> </p>
-        <button id="Button5">Increase theta</button>
-        <button id="Button6">Decrease theta</button>
-        <button id="Button7">Increase phi</button>
-        <button id="Button8">Decrease phi</button>
+        <button id="increaseTheta-btn">Increase theta</button>
+        <button id="decreaseTheta-btn">Decrease theta</button>
+        <button id="increasePhi-btn">Increase phi</button>
+        <button id="decreasePhi-btn">Decrease phi</button>
     </div>
         <canvas id="myGLCanvas"></canvas>
 
