@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title> Interactive Orthographic viewing of Cylinder</title>
+    <title> Interactive Orthographic viewing of cube</title>
     <style>
         #overlay {
             background-color: rgba(0, 0, 0, 0.7);
@@ -21,6 +21,8 @@
     <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
     <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
     <link href='Common/css/style.css' type='text/css' rel='stylesheet' />
+
+
     <script>
         var gl;
         var vertexArray;
@@ -37,10 +39,9 @@
         const up = vec3.clone([0.0, 1.0, 0.0]);
         var near = -1;
         var far = 1;
-        var radius = 0.5;
-        var radiuseye = 0.5;
-        var theta = 10.0 * Math.PI / 180.0;
-        var phi =  0.0;
+        var radius = 1.0;
+        var theta =  10.0 * Math.PI / 180.0;
+        var phi = 10.0 * Math.PI / 180.0;
         var dr = 5.0 * Math.PI / 180.0;
 
         var left = -1.0;
@@ -60,71 +61,49 @@
             shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
             gl.useProgram(shaderProg);
             shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "vPositionAttr"),
-                shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
+            shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
             shaderProg.projectionMatrixLoc = gl.getUniformLocation(shaderProg, "projectionMatrix");
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
             gl.useProgram(null);
-
         }
 
         function setupVertices() {
-            var slices = 500;
-            var halfLength = 0.5;
-            for (var i = 0.0; i <= slices; i += 1) {
 
-                var theta = i * 2.0 * Math.PI / 180;
-                var nextTheta = (i + 1) * 2 * Math.PI / 180;
+            quad(1, 0, 3, 2);
+            quad(2, 3, 7, 6);
+            quad(3, 0, 4, 7);
+            quad(6, 5, 1, 2);
+            quad(4, 5, 6, 7);
+            quad(5, 4, 0, 1);
 
-                //vertex at the middle of end
-                var v0 = [
-                    0,
-                    halfLength,
-                    0
-                ];
-                //vertices at the edges of circle
-                var v1 = [
-                    radius * Math.cos(theta),
-                    halfLength,
-                    radius * Math.sin(theta)
-                ];
-                var v2 = [
-                    radius * Math.cos(nextTheta),
-                    halfLength,
-                    radius * Math.sin(nextTheta)
-                ];
+        }
+        function quad(a, b, c, d) {
 
-                //the same vertice sat the bottom of the cylinder
-                var v3 = [
-                    radius * Math.cos(nextTheta),
-                    -halfLength,
-                    radius * Math.sin(nextTheta)
-                ];
+            vertices[0] = vec3.clone([-0.5, -0.5, 1.5]);
+            vertices[1] = vec3.clone([-0.5, 0.5, 1.5]);
+            vertices[2] = vec3.clone([0.5, 0.5, 1.5]);
+            vertices[3] = vec3.clone([0.5, -0.5, 1.5]);
+            vertices[4] = vec3.clone([-0.5, -0.5, 0.5]);
+            vertices[5] = vec3.clone([-0.5, 0.5, 0.5]);
+            vertices[6] = vec3.clone([0.5, 0.5, 0.5]);
+            vertices[7] = vec3.clone([0.5, -0.5, 0.5]);
 
-                var v4 = [
-                    radius * Math.cos(theta),
-                    -halfLength,
-                    radius * Math.sin(theta)
-                ];
+            vertexColors[0] = vec3.clone([0.0, 0.0, 0.0]);// black
+            vertexColors[1] = vec3.clone([1.0, 0.0, 0.0]);// red
+            vertexColors[2] = vec3.clone([1.0, 1.0, 0.0]);// yellow
+            vertexColors[3] = vec3.clone([0.0, 1.0, 0.0]);// green
+            vertexColors[4] = vec3.clone([0.0, 0.0, 1.0]);// blue
+            vertexColors[5] = vec3.clone([1.0, 0.0, 1.0]);// magenta
+            vertexColors[6] = vec3.clone([0.0, 1.0, 1.0]); // cyan
+            vertexColors[7] = vec3.clone([1.0, 1.0, 1.0]);// white
 
-                var v5 = [
-                    0,
-                    -halfLength,
-                    0
-                ];
+            var indices = [a, b, c, a, c, d];
 
-                vertices = vertices.concat(v0);
-                vertices = vertices.concat(v1);
-                vertices = vertices.concat(v2);
-                vertices = vertices.concat(v3);
-                vertices = vertices.concat(v4);
-                vertices = vertices.concat(v5);
+            for (var i = 0; i < indices.length; ++i) {
+                points.push(...vertices[indices[i]]);
 
-                vertexColors = vertexColors.concat([0.0, 0.0, 0.0]);// black
-                vertexColors = vertexColors.concat([1.0, 0.0, 0.0]);// red
-                vertexColors = vertexColors.concat([1.0, 1.0, 0.0]);// yellow
-                vertexColors = vertexColors.concat([0.0, 1.0, 0.0]);// green
-                vertexColors = vertexColors.concat([0.0, 0.0, 1.0]);// blue
-                vertexColors = vertexColors.concat([1.0, 0.0, 1.0]);// magenta
+                // different color for all faces
+                colors.push(...vertexColors[a]);
             }
         }
 
@@ -135,7 +114,7 @@
             setupVertices();
 
             vertexBuffer.itemSize = 3;
-            vertexBuffer.numberOfItems = vertices.length / 3;
+            vertexBuffer.numberOfItems = points.length / 3;
 
             colorBuffer = gl.createBuffer();
 
@@ -144,12 +123,12 @@
             vertexArray = gl.createVertexArray();
             gl.bindVertexArray(vertexArray);
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
             gl.enableVertexAttribArray(shaderProg.aPositionLoc);
             gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColors), gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
             gl.enableVertexAttribArray(shaderProg.vColor);
             gl.vertexAttribPointer(shaderProg.vColor, 3, gl.FLOAT, false, 0, 0);
 
@@ -162,8 +141,8 @@
             let modelViewMatrix = mat4.create();
             let projectionMatrix = mat4.create();
 
-            let eye = vec3.clone([radiuseye * Math.sin(phi), radiuseye * Math.sin(theta),
-            radiuseye * Math.cos(phi)]);
+            let eye = vec3.clone([radius * Math.sin(theta) * Math.cos(phi),
+                radius * Math.sin(theta) * Math.sin(phi), radius * Math.cos(theta)]);
 
             mat4.lookAt(modelViewMatrix, eye, at, up);
             mat4.ortho(projectionMatrix, left, right, bottom, ytop, near, far);
@@ -171,7 +150,7 @@
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
             gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
 
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexBuffer.numberOfItems);
+            gl.drawArrays(gl.TRIANGLES, 0, 36);
             gl.bindVertexArray(null);
             requestAnimationFrame(draw);
         }
@@ -200,7 +179,7 @@
 </head>
 <body>
     <div id="overlay">
-        Interactive Orthographic viewing of Cylinder
+        Interactive Orthographic viewing of cube
         <p />
         <button id="increaseZ-btn">Increase Z</button>
         <button id="decreaseZ-btn">Decrease Z</button>
@@ -211,7 +190,7 @@
         <button id="decreaseTheta-btn">Decrease theta</button>
         <button id="increasePhi-btn">Increase phi</button>
         <button id="decreasePhi-btn">Decrease phi</button>
-    </div>
+      </div>
     <canvas id="myGLCanvas"></canvas>
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
         in vec3 vPositionAttr;
@@ -222,7 +201,7 @@
 
         void main(void){
         gl_Position = projectionMatrix * modelViewMatrix *  vec4(vPositionAttr, 1.0);
-        //gl_Position.z = -gl_Position.z;
+        gl_Position.z = -gl_Position.z;
         vColor = vec4(vColorAttr, 1.0);
         }
     </script>

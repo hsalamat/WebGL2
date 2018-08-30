@@ -29,14 +29,14 @@
         var colors = [];
         var vertices = [];
         var vertexColors = [];
-    
+
         const at = vec3.clone([0.0, 0.0, 0.0]);
         const up = vec3.clone([0.0, 1.0, 0.0]);
         var near = -1;
         var far = 1;
         var radius = 1.0;
-        var theta = 0.0;
-        var phi = 0.0;
+        var theta = 10.0 * Math.PI / 180.0;
+        var phi = 10.0 * Math.PI / 180.0;
         var dr = 5.0 * Math.PI / 180.0;
 
         var left = -1.0;
@@ -149,7 +149,7 @@
             let projectionMatrix = mat4.create();
 
             let eye = vec3.clone([radius * Math.sin(theta) * Math.cos(phi),
-                radius * Math.sin(theta) * Math.sin(phi), radius * Math.cos(theta)]);      
+                radius * Math.sin(theta) * Math.sin(phi), radius * Math.cos(theta)]);
 
             mat4.lookAt(modelViewMatrix, eye, at, up);
             mat4.ortho(projectionMatrix, left, right, bottom, ytop, near, far);
@@ -178,7 +178,7 @@
         <button id="Button8">Decrease phi</button>
     </div>
         <canvas id="myGLCanvas"></canvas>
- 
+
 
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
         in vec3 vPositionAttr;
