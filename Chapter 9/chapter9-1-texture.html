@@ -169,10 +169,8 @@
           gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB,
                gl.RGB, gl.UNSIGNED_BYTE, image );
           gl.generateMipmap( gl.TEXTURE_2D );
-          gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
-                            gl.NEAREST_MIPMAP_LINEAR );
-          gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
-
+          //gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,gl.NEAREST_MIPMAP_LINEAR );
+          //gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
           gl.uniform1i(shaderProg.uTexture, 0);
         }
 
@@ -233,7 +231,7 @@
         <button id="decreasePhi-btn">Decrease phi</button>
       </div>
     <canvas id="myGLCanvas"></canvas>
-    <img id="texImage" src="wicker_256.jpg" style="display:none" crossorigin="anonymous"/>
+    <img id="texImage" src="stickman.jpg" style="display:none" crossorigin="anonymous"/>
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
         in vec3 vPositionAttr;
         in vec3 vColorAttr;
