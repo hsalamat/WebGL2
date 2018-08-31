@@ -70,7 +70,7 @@
             shaderProg.projectionMatrixLoc = gl.getUniformLocation(shaderProg, "projectionMatrix");
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
             shaderProg.vTexCoord = gl.getAttribLocation(shaderProg, "vTexCoord");
-            shaderProg.uTexture = gl.getUniformLocation(shaderProg, "texture");
+            shaderProg.uTexture = gl.getUniformLocation(shaderProg, "textureMap");
 
             gl.useProgram(null);
         }
@@ -160,7 +160,6 @@
         function setupTextures() {
             var image = document.getElementById("texImage");
             configureTexture(image);
-
         }
 
         function configureTexture(image) {
