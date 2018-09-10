@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Instancing</title>
+    <style>
+        html, body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: #404040;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        div {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+
+    <script>
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var shaderProg;
+        var vColor;
+
+        window.addEventListener("load", function () {
+            //............................................
+            //Get our extended GL Context Object
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+
+            setupShaders()
+            setupBuffers()
+            draw();					//Draw the triangle
+        });
+
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);				//Activate the Shader
+            //Get Location of Uniforms and Attributes.
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position"),
+            shaderProg.uPointSizeLoc = gl.getUniformLocation(shaderProg, "uPointSize");
+            gl.uniform1f(shaderProg.uPointSizeLoc, 1.0);		//Store data to the shader's uniform variable uPointSize
+
+            var offset = 0.1;
+            var index = 0
+            for (var y=-10;y<10;y+=2)
+            {
+              for (var x=-10; x<10; x+=2)
+              {
+                gl.uniform3f( gl.getUniformLocation(shaderProg, "uOffsets[" +index+"]"), x/10 + offset, y/10 + offset, 0);
+                index++;
+              }
+            }
+
+            vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
+            gl.useProgram(null);
+
+        }
+
+        function setupVertices() {
+
+            var myVerts, points = [];
+
+            points = [
+             -0.05,  0.05,  0.0, //v0
+              0.05, -0.05,  0.0, //v1
+             -0.05,  -0.05,  0.0, //v2
+             -0.05,  0.05,  0.0, //v3
+              0.05,  -0.05,  0.0, //v4
+              0.05,  0.05,  0.0, //v5
+            ];
+
+
+            myVerts = new Float32Array(points);
+
+            return myVerts;
+
+        }
+
+        function setupBuffers() {
+
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            var vertices = setupVertices();
+            gl.bufferData(gl.ARRAY_BUFFER,vertices, gl.STATIC_DRAW);
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = vertices.length / 3;
+
+            gl.useProgram(shaderProg);
+
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+            gl.bindVertexArray(null);
+        }
+
+        function draw() {
+            gl.bindVertexArray(vertexArray);
+            gl.disableVertexAttribArray(vColor);
+            gl.vertexAttrib4f(vColor, 0.0, 0.0, 1.0, 1.0);
+            gl.drawArraysInstanced(gl.TRIANGLES, 0, vertexBuffer.numberOfItems, 100);
+            gl.bindVertexArray(null);
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <canvas id="myGLCanvas"></canvas>
+    </div>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+        in vec4 vColorAttr;
+        out vec4 vColor;
+        uniform float uPointSize;
+        uniform vec3 uOffsets[100];
+
+        void main(void){
+        gl_PointSize = uPointSize;
+        vec3 offset = uOffsets[gl_InstanceID];
+        gl_Position = vec4(a_position + offset, 1.0);
+        vColor = vColorAttr;
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        in vec4 vColor;
+        out vec4 finalColor;
+
+        void main(void) {
+        finalColor = vColor;
+        }
+    </script>
+
+</body>
+</html>
