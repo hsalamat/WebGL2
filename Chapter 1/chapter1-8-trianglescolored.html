@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+
+			canvas{border:1px solid black;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+		</style>
+
+		<script src="Common/js/gl.js"></script>
+		<script src="Common/js/shaders.js"></script>
+		<script>
+			var gl;
+			window.addEventListener("load",function(){
+				//............................................
+				//Get our extended GL Context Object
+				gl = GLInstance("myGLCanvas").fSetSize(500,500).fClear();
+
+                //SHADER STEPS
+                // 1. Get Vertex and Fragment Shader Text
+                /*var vShaderTxt	= ShaderUtil.domShaderSrc("vertex_shader"),
+                    fShaderTxt	= ShaderUtil.domShaderSrc("fragment_shader"),
+                    // 2. Compile text and validate
+                    vShader		= ShaderUtil.createShader(gl,vShaderTxt,gl.VERTEX_SHADER),
+                    fShader		= ShaderUtil.createShader(gl,fShaderTxt,gl.FRAGMENT_SHADER),
+                    // 3. Link the shaders together as a program.
+                    shaderProg	= ShaderUtil.createProgram(gl,vShader,fShader,true);*/
+                shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+
+				// 4. Get Location of Uniforms and Attributes.
+				gl.useProgram(shaderProg);
+                var aPositionLoc = gl.getAttribLocation(shaderProg, "a_position");
+                var uPointSizeLoc = gl.getUniformLocation(shaderProg, "uPointSize");
+                var aColorLoc = gl.getAttribLocation(shaderProg, "a_color");
+				gl.useProgram(null);
+
+				//............................................
+				//Set Up Data Buffers
+                var triangleVertices = [
+                    -0.5, 0.5, 0.0,
+                    0.5, 0.5, 0.0,                 
+                   0.5, -0.5, 0.0, 
+                   -0.5, -0.5, 0.0,           
+                ];
+
+                var triangleColors = [
+                    1.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0,
+                    0.0, 0.0, 1.0
+                ];
+                var aryVerts = new Float32Array(triangleVertices);
+				var	bufVerts = gl.createBuffer();
+
+				gl.bindBuffer(gl.ARRAY_BUFFER,bufVerts);
+				gl.bufferData(gl.ARRAY_BUFFER, aryVerts, gl.STATIC_DRAW);
+                gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+                var aryColor = new Float32Array(triangleColors);
+                var bufColors = gl.createBuffer();
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, bufColors);
+                gl.bufferData(gl.ARRAY_BUFFER, aryColor, gl.STATIC_DRAW);
+                gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+
+
+				//............................................
+				//Set Up For Drawing
+				gl.useProgram(shaderProg);				//Activate the Shader
+				gl.uniform1f(uPointSizeLoc,10.0);		//Store data to the shader's uniform variable uPointSize
+
+				//how its done without VAOs
+				gl.bindBuffer(gl.ARRAY_BUFFER,bufVerts);					//Tell gl which buffer we want to use at the moment
+				gl.enableVertexAttribArray(aPositionLoc);					//Enable the position attribute in the shader
+				gl.vertexAttribPointer(aPositionLoc,3,gl.FLOAT,false,0,0);	//Set which buffer the attribute will pull its data from
+                gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, bufColors);					//Tell gl which buffer we want to use at the moment
+                gl.enableVertexAttribArray(aColorLoc);					//Enable the position attribute in the shader
+                gl.vertexAttribPointer(aColorLoc, 3, gl.FLOAT, false, 0, 0);	//Set which buffer the attribute will pull its data from
+                gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+				this.gl.drawArrays(gl.TRIANGLES, 0, 3);						//Draw the triangle
+			});
+		</script>
+	</head>
+<body>
+	<div>
+		<canvas id="myGLCanvas"></canvas>
+	</div>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+        in vec3 a_color;
+        out vec4 vColor;
+        uniform float uPointSize;
+
+        void main(void){
+        gl_PointSize = uPointSize;
+        vColor = vec4(a_color,1.0);
+        gl_Position = vec4(a_position, 1.0);
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        in vec4 vColor; 
+        out vec4 finalColor;
+
+        void main(void) {
+        //finalColor = vec4(1.0, 0.0, 0.0, 1.0);
+        finalColor = vColor;
+        }
+    </script>
+
+</body>
+</html>
