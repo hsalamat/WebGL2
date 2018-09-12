@@ -111,7 +111,9 @@
             gl.bindVertexArray(vertexArray);
             gl.disableVertexAttribArray(vColor);
             gl.vertexAttrib4f(vColor, 1.0, 0.0, 1.0, 1.0);
-            gl.drawElements(gl.LINE_STRIP,20, gl.UNSIGNED_SHORT, 0);
+            gl.drawElements(gl.LINE_STRIP, 10, gl.UNSIGNED_SHORT, 0);
+            gl.vertexAttrib4f(vColor, 1.0, 1.0, 0.0, 1.0);
+            gl.drawElements(gl.LINE_STRIP, 9, gl.UNSIGNED_SHORT, 10);
             gl.bindVertexArray(null);
         }
     </script>
