@@ -1,0 +1,170 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Triangle Strip using Index Drawing</title>
+    <style>
+        #overlay {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-family: monospace;
+            padding: 1em;
+            border-radius: 1em;
+            border: 5px solid #f00;
+            text-shadow: 0px 0px 5px white, 0px 0px 5px white, 0px 0px 5px white, 0px 0px 5px white;
+        }
+
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+
+    <script>
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var stripElementBuffer
+        var shaderProg;
+        var vColor;
+
+        window.addEventListener("load", function () {
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            startTime();
+            setupShaders()
+            setupBuffers()
+            draw();
+        });
+
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position");
+            shaderProg.uPointSizeLoc = gl.getUniformLocation(shaderProg, "uPointSize");
+            gl.uniform1f(shaderProg.uPointSizeLoc, 1.0);
+            vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
+
+            gl.useProgram(null);
+
+        }
+
+        function setupVertices() {
+
+            var myVerts, points = [];
+
+            points = [
+                -0.5, 0.2, 0.0, //v0
+                -0.4, 0.0, 0.0, //v1
+                -0.3, 0.2, 0.0, //v2
+                -0.2, 0.0, 0.0, //v3
+                -0.1, 0.2, 0.0, //v4
+                //start second strip
+                0.0, 0.0, 0.0, //v5
+                0.1, 0.2, 0.0, //v6
+                0.2, 0.0, 0.0, //v7
+                0.3, 0.2, 0.0, //v8
+                0.4, 0.0, 0.0, //v9
+                0.5, 0.2, 0.0 //v10
+            ];
+
+
+            myVerts = new Float32Array(points);
+
+            return myVerts;
+
+        }
+
+        function setupBuffers() {
+
+            gl.useProgram(shaderProg);
+
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            var vertices = setupVertices();
+            gl.bufferData(gl.ARRAY_BUFFER,vertices, gl.STATIC_DRAW);
+
+
+            stripElementBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, stripElementBuffer);
+            var indices = [0, 1, 2, 3, 4,
+                            4,4,5, //3 extra indicies for the degenerate triangles
+                          5, 6, 7, 8, 9, 10];
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+            stripElementBuffer.numberOfItems = 14;
+
+
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+            gl.bindVertexArray(null);
+        }
+
+        function draw() {
+            gl.bindVertexArray(vertexArray);
+            gl.disableVertexAttribArray(vColor);
+            gl.vertexAttrib4f(vColor, 1.0, 0.0, 1.0, 1.0);
+            gl.drawElements(gl.TRIANGLE_STRIP, stripElementBuffer.numberOfItems, gl.UNSIGNED_SHORT, 0);
+            gl.vertexAttrib4f(vColor, 1.0, 1.0, 0.0, 1.0);
+
+            //gl.drawElements(gl.LINE_STRIP, 9, gl.UNSIGNED_SHORT, 10);
+            gl.vertexAttrib4f(vColor, 1.0, 1.0, 0.0, 1.0);
+            gl.drawArrays(gl.LINE_STRIP, 0, 5);
+            gl.drawArrays(gl.LINE_STRIP, 5, 6);
+            gl.bindVertexArray(null);
+        }
+
+        function startTime() {
+            var today = new Date();
+            var h = today.getHours();
+            var m = today.getMinutes();
+            var s = today.getSeconds();
+            m = checkTime(m);
+            s = checkTime(s);
+            document.getElementById('time').innerHTML =
+                h + ":" + m + ":" + s;
+            var t = setTimeout(startTime, 500);
+        }
+        function checkTime(i) {
+            if (i < 10) { i = "0" + i };  // add zero in front of numbers < 10
+            return i;
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <div id="overlay">
+            <div>Time: <span id="time"></span></div>
+            <div> This example uses both gl.drawArrays() and gl.drawElements() together with line and triangle primitive to separate a triangle strip using the degenerate triangle 
+            </div>
+        </div>
+        <canvas id="myGLCanvas"></canvas>
+    </div>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+        in vec4 vColorAttr;
+        out vec4 vColor;
+        uniform float uPointSize;
+
+        void main(void){
+        gl_PointSize = uPointSize;
+        gl_Position = vec4(a_position, 1.0);
+        vColor = vColorAttr;
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        in vec4 vColor;
+        out vec4 finalColor;
+
+        void main(void) {
+        finalColor = vColor;
+        }
+    </script>
+
+</body>
+</html>
