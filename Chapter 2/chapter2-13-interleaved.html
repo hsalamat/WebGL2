@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: #404040;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        div {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+    <script>
+        var gl;
+        var triangleVertexArray;
+        var hexagonVertexArray;
+        var vertexBuffer;
+        var hexagonVertexBuffer;
+        var shaderProg;
+
+        window.addEventListener("load", function () {
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            setupShaders()
+            setupBuffers()
+            draw();
+        });
+
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+
+            //Get Location of Uniforms and Attributes.
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position");
+            shaderProg.aColorLoc = gl.getAttribLocation(shaderProg, "a_color");
+            shaderProg.uPointSizeLoc = gl.getUniformLocation(shaderProg, "uPointSize");
+            gl.useProgram(null);
+
+            gl.useProgram(shaderProg);				//Activate the Shader
+            gl.uniform1f(shaderProg.uPointSizeLoc, 50.0);		//Store data to the shader's uniform variable uPointSize
+
+        }
+
+        function setupBuffers() {
+
+            var triangleVertices = [
+                0.0, 0.5, 0.0, 1,0,0,1,
+                -0.5, -0.5, 0.0,0,1,0,1,
+                0.5, -0.5, 0.0, 0,0,1,1
+            ];
+
+            var nbrOfVertices = 3;
+
+            // Calculate how many bytes that are needed for one vertex element
+            // that consists of (x,y,z) + (r,g,b,a)
+            var vertexSizeInBytes = 3 * Float32Array.BYTES_PER_ELEMENT +
+                                         4 * Uint8Array.BYTES_PER_ELEMENT;
+
+            var vertexSizeInFloats = vertexSizeInBytes / Float32Array.BYTES_PER_ELEMENT;
+
+            console.log("vertexSizeInBytes: " + vertexSizeInBytes + " Bytes");
+            console.log("vertexSizeInFloats: " + vertexSizeInFloats + " Floats");
+            // Allocate the buffer
+            buffer = new ArrayBuffer(nbrOfVertices * vertexSizeInBytes);
+
+            // Map the buffer to a Float32Array view to access the position
+            positionView = new Float32Array(buffer);
+
+            // Map the same buffer to a Uint8Array to access the color
+            colorView = new Uint8Array(buffer);
+
+            // Populate the ArrayBuffer from the JavaScript Array
+            var positionOffsetInFloats = 0;
+            var colorOffsetInBytes = 12;
+            var k = 0; // index to JavaScript Array
+            for (var i = 0; i < nbrOfVertices; i++) {
+                positionView[positionOffsetInFloats] = triangleVertices[k];     // x
+                positionView[1 + positionOffsetInFloats] = triangleVertices[k + 1]; // y
+                positionView[2 + positionOffsetInFloats] = triangleVertices[k + 2]; // z
+                colorView[colorOffsetInBytes] = triangleVertices[k + 3];          // R
+                colorView[1 + colorOffsetInBytes] = triangleVertices[k + 4];        // G
+                colorView[2 + colorOffsetInBytes] = triangleVertices[k + 5];        // B
+                colorView[3 + colorOffsetInBytes] = triangleVertices[k + 6];        // A
+
+                positionOffsetInFloats += vertexSizeInFloats;
+                colorOffsetInBytes += vertexSizeInBytes;
+                k += 7;
+            }
+
+
+
+
+            triangleVertexArray = gl.createVertexArray();
+            gl.bindVertexArray(triangleVertexArray);
+
+            triangleVertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
+            triangleVertexBuffer.positionSize = 3;
+            triangleVertexBuffer.colorSize = 4;
+            triangleVertexBuffer.numberOfItems = 3;
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 16, 0);
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+
+            gl.vertexAttribPointer(shaderProg.aColorLoc, 4, gl.UNSIGNED_BYTE, false, 16, 12);
+            gl.enableVertexAttribArray(shaderProg.aColorLoc);
+
+            gl.bindVertexArray(null);
+
+
+            //gl.disableVertexAttribArray(shaderProg.aColorLoc);
+            //gl.vertexAttrib4f(shaderProg.aColorLoc, 0.0, 0.0, 1.0, 1.0);
+
+            gl.bindVertexArray(null);
+
+        }
+
+        function draw() {
+            gl.bindVertexArray(triangleVertexArray);
+            gl.drawArrays(gl.TRIANGLES, 0, triangleVertexBuffer.numberOfItems);
+            gl.bindVertexArray(null);
+
+            gl.bindVertexArray(hexagonVertexArray);
+            gl.drawArrays(gl.LINE_STRIP, 0, hexagonVertexBuffer.numberOfItems);
+            gl.bindVertexArray(null);
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <canvas id="myGLCanvas"></canvas>
+    </div>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+        in vec3 a_color;
+        out vec4 vColor;
+        uniform float uPointSize;
+
+        void main(void){
+        gl_PointSize = uPointSize;
+        vColor = vec4(a_color,1.0);
+        gl_Position = vec4(a_position, 1.0);
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        in vec4 vColor;
+        out vec4 finalColor;
+
+        void main(void) {
+        finalColor = vColor;
+        }
+    </script>
+
+</body>
+</html>
