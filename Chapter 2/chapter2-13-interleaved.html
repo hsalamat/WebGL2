@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <style>
@@ -60,11 +60,14 @@
 
         function setupBuffers() {
 
-            var triangleVertices = [
-                0.0, 0.5, 0.0, 1,0,0,1,
-                -0.5, -0.5, 0.0,0,1,0,1,
-                0.5, -0.5, 0.0, 0,0,1,1
-            ];
+        var triangleVertices = [
+                        //( x     y     z) (r  g  b  a )
+                        // --------------------------------------
+                        0.0,  0.5,  0.0,  1, 0, 0, 1, // V0
+                        0.5, -0.5,  0.0,  0, 1, 0, 1, // V1
+                        -0.5, -0.5,  0.0,  0, 0, 1, 1  // V2
+                        ];
+                        
 
             var nbrOfVertices = 3;
 
@@ -105,8 +108,6 @@
             }
 
 
-
-
             triangleVertexArray = gl.createVertexArray();
             gl.bindVertexArray(triangleVertexArray);
 
@@ -124,12 +125,6 @@
 
             gl.bindVertexArray(null);
 
-
-            //gl.disableVertexAttribArray(shaderProg.aColorLoc);
-            //gl.vertexAttrib4f(shaderProg.aColorLoc, 0.0, 0.0, 1.0, 1.0);
-
-            gl.bindVertexArray(null);
-
         }
 
         function draw() {
@@ -137,9 +132,6 @@
             gl.drawArrays(gl.TRIANGLES, 0, triangleVertexBuffer.numberOfItems);
             gl.bindVertexArray(null);
 
-            gl.bindVertexArray(hexagonVertexArray);
-            gl.drawArrays(gl.LINE_STRIP, 0, hexagonVertexBuffer.numberOfItems);
-            gl.bindVertexArray(null);
         }
     </script>
 </head>
