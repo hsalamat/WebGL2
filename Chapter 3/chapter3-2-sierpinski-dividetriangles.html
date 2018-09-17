@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Sierpinski Triangle</title>
+    <style>
+        html, body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: #404040;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        div {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+
+    <script>
+        var gl;
+        var triangleVertexArray;
+        var triangleVertexBuffer, triangleColorBuffer;
+        var shaderProg;
+        var vColor;
+        var NumTimesToSubdivide = 3;
+        var  triangleVertices = [];
+        var triangleColors = [];
+        var colors = [];
+
+        window.addEventListener("load", function () {
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            setupShaders();
+            setupBuffers();
+            draw();
+        });
+
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position");
+            shaderProg.aColorLoc = gl.getAttribLocation(shaderProg, "a_color");
+            gl.useProgram(null);
+        }
+
+        function setupVertices() {
+
+            var myVerts;
+            var vertices = [];
+            vertices[0] = new Float32Array([-0.5, -.5, 0.0]);
+            vertices[1] = new Float32Array([0.0, 0.5, 0.0]);
+            vertices[2] = new Float32Array([0.5, -0.5, 0.0]);
+
+            colors[0] = new Float32Array([1.0, 0.0, 0.0]);
+            colors[1] = new Float32Array([0.0, 1.0, 0.0]);
+            colors[2] = new Float32Array([0.0, 0.0, 1.0]);
+
+            divideTriangle(vertices[0], vertices[1], vertices[2], NumTimesToSubdivide);
+        }
+
+        function triangle(a, b, c) {
+            triangleVertices.push(...a);
+            triangleVertices.push(...b);
+            triangleVertices.push(...c);
+
+            triangleColors.push(...colors[0]);
+            triangleColors.push(...colors[1]);
+            triangleColors.push(...colors[2]);
+        }
+
+        function divideTriangle(a, b, c, count) {
+
+            // check for end of recursion
+
+            if (count === 0) {
+                triangle(a, b, c);
+            }
+            else {
+
+                //bisect the sides
+
+                var ab = mix(a, b, 0.5);
+                var ac = mix(a, c, 0.5);
+                var bc = mix(b, c, 0.5);
+
+                --count;
+
+                // three new triangles
+
+                divideTriangle(a, ab, ac, count);
+                divideTriangle(c, ac, bc, count);
+                divideTriangle(b, bc, ab, count);
+            }
+        }
+
+        function mix(u, v, s) {
+          var result = [];
+          for ( var i = 0; i < u.length; ++i ) {
+              result.push( (1.0 - s) * u[i] + s * v[i] );
+          }
+
+          return new Float32Array(result);
+        }
+
+        function setupBuffers() {
+          setupVertices();
+          gl.useProgram(shaderProg);
+
+          triangleVertexArray = gl.createVertexArray();
+          gl.bindVertexArray(triangleVertexArray);
+
+          triangleVertexBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
+          gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+          gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
+          triangleColorBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, triangleColorBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleColors), gl.STATIC_DRAW);
+          gl.enableVertexAttribArray(shaderProg.aColorLoc);
+          gl.vertexAttribPointer(shaderProg.aColorLoc, 3, gl.FLOAT, false, 0, 0);
+
+          gl.bindVertexArray(null);
+
+        }
+
+        function draw() {
+            gl.bindVertexArray(triangleVertexArray);
+            gl.drawArrays(gl.TRIANGLES, 0, triangleVertices.length/3);
+            gl.bindVertexArray(null);
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <canvas id="myGLCanvas"></canvas>
+    </div>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+        in vec3 a_color;
+        out vec4 vColor;
+
+        void main(void){
+        gl_Position = vec4(a_position, 1.0);
+        vColor = vec4(a_color,1.0);
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        in vec4 vColor;
+        out vec4 finalColor;
+
+        void main(void) {
+        finalColor = vColor;
+        }
+    </script>
+
+</body>
+</html>
