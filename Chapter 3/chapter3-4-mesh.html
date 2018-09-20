@@ -118,7 +118,7 @@
         }
         function draw() {
             gl.bindVertexArray(vertexArray);
-            gl.drawArraysInstanced(gl.LINES, 0, vertexBuffer.numberOfItems, 64);
+            gl.drawArrays(gl.LINES, 0, vertexBuffer.numberOfItems);
             gl.bindVertexArray(null);
         }
     </script>
