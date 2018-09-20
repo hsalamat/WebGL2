@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>Instanced Arrays</title>
+    <title>Draw a checkerboard using Instanced Arrays</title>
     <style>
         html, body {
             margin: 0px;
@@ -39,17 +39,12 @@
         var shaderProg;
         var vColor;
         var translations = [];
-
         window.addEventListener("load", function () {
-            //............................................
-            //Get our extended GL Context Object
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
-
             setupShaders()
             setupBuffers()
-            draw();					//Draw the triangle
+            draw();					
         });
-
         function setupShaders() {
             shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
             gl.useProgram(shaderProg);
@@ -57,26 +52,18 @@
             shaderProg.uPointSizeLoc = gl.getUniformLocation(shaderProg, "uPointSize");
             shaderProg.aOffsetLoc = gl.getAttribLocation(shaderProg, "a_offset");
             gl.uniform1f(shaderProg.uPointSizeLoc, 1.0);
-
-            var offset = 0.1;
-            var index = 0
-            for (var y=-8;y<8;y+=2)
+            for (var x = -8.0; x < 8.0; x += 2.0)
             {
-              for (var x=-8; x<8; x+=2)
+                for (var y = -8.0; y < 8.0; y += 2.0)
               {
-                translations.push( x/8 + offset, y/8 + offset, 0.0);
+                translations.push( x, y, 0.0);
               }
             }
-
             vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
             gl.useProgram(null);
-
         }
-
         function setupVertices() {
-
             var myVerts, points = [];
-
             points = [
              -0.08,  0.08,  0.0, //v0
               0.08, -0.08,  0.0, //v1
@@ -85,15 +72,10 @@
               0.08,  -0.08,  0.0, //v4
               0.08,  0.08,  0.0, //v5
             ];
-
             myVerts = new Float32Array(points);
-
             return myVerts;
-
         }
-
         function setupBuffers() {
-
             var squareColors = [
                 1.0, 0.0, 0.0,
                 0.0, 1.0, 0.0,
@@ -102,12 +84,9 @@
                 0.0, 1.0, 0.0,
                 0.0, 0.0, 1.0
             ];
-
             gl.useProgram(shaderProg);
-
             vertexArray = gl.createVertexArray();
             gl.bindVertexArray(vertexArray);
-
             vertexBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
             var vertices = setupVertices();
@@ -117,16 +96,18 @@
             gl.enableVertexAttribArray(shaderProg.aPositionLoc);
             gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
 
-            colorBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(squareColors), gl.STATIC_DRAW);
-            colorBuffer.itemSize = 3;
-            colorBuffer.numberOfItems = 6;
-            gl.enableVertexAttribArray(vColor);
-            gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
+            //use the following if you want to pass color per vertex
+            //colorBuffer = gl.createBuffer();
+            //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(squareColors), gl.STATIC_DRAW);
+            //colorBuffer.itemSize = 3;
+            //colorBuffer.numberOfItems = 6;
+            //gl.enableVertexAttribArray(vColor);
+            //gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
 
-            gl.disableVertexAttribArray(vColor);
-            gl.vertexAttrib3f(vColor, 139/255, 69/255, 19/255);
+            //use the following two lines this if every square has the same color --> solid brown
+            //gl.disableVertexAttribArray(vColor);
+            //gl.vertexAttrib3f(vColor, 139.0 / 255.0, 69.0 / 255.0, 19.0 / 255.0);
 
             offsetBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, offsetBuffer);
@@ -134,13 +115,10 @@
             gl.enableVertexAttribArray(shaderProg.aOffsetLoc);
             gl.vertexAttribPointer(shaderProg.aOffsetLoc, 3, gl.FLOAT, false, 0, 0);
             gl.vertexAttribDivisor(shaderProg.aOffsetLoc,1);
-
             gl.bindVertexArray(null);
         }
-
         function draw() {
             gl.bindVertexArray(vertexArray);
-
             gl.drawArraysInstanced(gl.TRIANGLES, 0, vertexBuffer.numberOfItems, 64);
             gl.bindVertexArray(null);
         }
@@ -152,27 +130,38 @@
     </div>
 
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        precision highp float;
         in vec3 a_position;
         in vec3 vColorAttr;
         out vec4 vColor;
         uniform float uPointSize;
         in vec3 a_offset;
 
+        //if mod fuction in GLSL is buggy, use this
+        float mod2(float x) {
+        return x - 2.0 * floor(x * 0.5);
+        }
         void main(void){
         gl_PointSize = uPointSize;
-        gl_Position = vec4(a_position + a_offset, 1.0);
+        gl_Position = vec4(a_position + (a_offset/10.0), 1.0);
 
-        int sum = int(a_offset.x * 100.0) + int (a_offset.y * 100.0);
-        if (sum - int (2.0 * floor(float(sum)/2.0)) == 0)
-        {vColor = vec4(0.54,0.27,0.07, 1.0);}
-        else {vColor = vec4(0.96,0.87,0.70, 1.0);}
+        //if ( mod2(a_offset.x/2.0 + a_offset.y/2.0) == 0.0)
+        if ( mod(a_offset.x/2.0 + a_offset.y/2.0 , 2.0) == 0.0)
+        {
+        vColor = vec4(139.0 / 255.0, 69.0 / 255.0, 19.0 / 255.0, 1.0);//solid brown
         }
+        else
+        {
+        vColor = vec4(245.0 / 255.0, 222.0 / 255.0, 179.0 / 255.0, 1.0); //wheat
+        }
+        }
+
+
     </script>
     <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
-        precision mediump float;
+        precision highp float;
         in vec4 vColor;
         out vec4 finalColor;
-
         void main(void) {
         finalColor = vColor;
         }
