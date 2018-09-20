@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Draw a mesh</title>
+    <style>
+        html, body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: #404040;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        div {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+
+    <script>
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var colorBuffer;
+        var shaderProg;
+        var vColor;
+        var translations = [];
+        window.addEventListener("load", function () {
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            setupShaders()
+            setupBuffers()
+            draw();					
+        });
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position");
+            vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
+            gl.useProgram(null);
+        }
+        function setupVertices() {
+            //Dynamiclly create a grid
+            var verts = [],
+                myVerts = []
+                size = 1.8,			// W/H of the outer box of the grid, from origin we can only go 1 unit in each direction, so from left to right is 2 units max
+                div = 10.0,			// How to divide up the grid
+                step = size / div,	// Steps between each line, just a number we increment by for each line in the grid.
+                half = size / 2;	// From origin the starting position is half the size.
+
+            var p;	//Temp variable for position value.
+            for (var i = 0; i <= div; i++) {
+                //Vertical line
+                p = -half + (i * step);
+                verts.push(p);		//x1
+                verts.push(half);	//y1
+                verts.push(0);		//z1
+
+                verts.push(p);		//x2
+                verts.push(-half);	//y2
+                verts.push(0);		//z2
+
+                //Horizontal line
+                p = half - (i * step);
+                verts.push(-half);	//x1
+                verts.push(p);		//y1
+                verts.push(0);		//z1
+
+                verts.push(half);	//x2
+                verts.push(p);		//y2
+                verts.push(0);		//z2
+            }
+
+            myVerts = new Float32Array(verts);
+            return myVerts;
+        }
+        function setupBuffers() {
+  
+            gl.useProgram(shaderProg);
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            var vertices = setupVertices();
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = vertices.length / 3;
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
+            //use the following if you want to pass color per vertex
+            //colorBuffer = gl.createBuffer();
+            //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(squareColors), gl.STATIC_DRAW);
+            //colorBuffer.itemSize = 3;
+            //colorBuffer.numberOfItems = 6;
+            //gl.enableVertexAttribArray(vColor);
+            //gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
+
+            //use the following two lines this if every square has the same color --> solid brown
+            gl.disableVertexAttribArray(vColor);
+            gl.vertexAttrib3f(vColor, 139.0 / 255.0, 69.0 / 255.0, 19.0 / 255.0);
+
+            gl.bindVertexArray(null);
+        }
+        function draw() {
+            gl.bindVertexArray(vertexArray);
+            gl.drawArraysInstanced(gl.LINES, 0, vertexBuffer.numberOfItems, 64);
+            gl.bindVertexArray(null);
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <canvas id="myGLCanvas"></canvas>
+    </div>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+        in vec3 vColorAttr;
+        out vec4 vColor;
+
+        void main(void){
+        gl_Position = vec4(a_position, 1.0);
+
+        vColor = vec4(vColorAttr, 1.0);
+        }
+
+
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision highp float;
+        in vec4 vColor;
+        out vec4 finalColor;
+        void main(void) {
+        finalColor = vColor;
+        }
+    </script>
+
+</body>
+</html>
