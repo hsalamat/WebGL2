@@ -30,11 +30,14 @@
     <script src="Common/js/shaders.js"></script>
     <script src="Common/js/gl-matrix.js"></script>
     <script>
+        "use strict"
         var gl;
         var triangleVertexArray;
         var hexagonVertexArray;
-        var vertexBuffer;
         var hexagonVertexBuffer;
+        var triangleVertexBuffer;
+        var triangleColorBuffer;
+        var hexagonColorBuffer;
         var shaderProg;
 
         window.addEventListener("load", function () {
