@@ -34,6 +34,11 @@
         window.addEventListener("load", function () {
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
             gl.enable(gl.DEPTH_TEST);
+            //gl.frontFace(gl.CW); //tells WebGL that triangles with CW winding are front facing
+            //gl.frontFace(gl.CCW); //tells WebGL that triangles with CCW winding are front facing
+            //gl.enable(gl.CULL_FACE);
+            //gl.cullFace(gl.Front); //cull the front facing triangles
+
             setupShaders()
             setupBuffers()
             draw();
