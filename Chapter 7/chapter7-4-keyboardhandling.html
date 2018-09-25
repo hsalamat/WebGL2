@@ -30,6 +30,7 @@
     <script src="Common/js/gl.js"></script>
     <script src="Common/js/shaders.js"></script>
     <script src="Common/js/gl-matrix.js"></script>
+    <script src="Common/js/RenderLoop.js"></script>
 
     <script>
         var gl;
@@ -43,27 +44,25 @@
         var vertices = [];
         var baseColors = [];
         var movement = vec2.create();
-        var distance = vec2.create();
-        var currentTime;
-        var perviousTime;
-        var dt = 0;
-        var PlayerSpeed = 1;  
-        var TimePerFrame = 1/60;  //time per frame
-        var timeSinceLastUpdate = 0;
+
+        var PlayerSpeed = 1;
+        var TimePerFrame = 1 / 60;  //time per frame
+
+        var rLoop;
 
         window.addEventListener("load", function () {
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
             gl.enable(gl.DEPTH_TEST);
             setupShaders()
             setupBuffers()
-            draw();
+            rLoop = new RenderLoop(draw).start();
         });
 
         function setupShaders() {
             shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
             gl.useProgram(shaderProg);
             shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "vPositionAttr"),
-            shaderProg.uMovement = gl.getUniformLocation(shaderProg, "uMovement");
+                shaderProg.uMovement = gl.getUniformLocation(shaderProg, "uMovement");
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
 
             gl.useProgram(null);
@@ -72,10 +71,10 @@
 
         function setupVertices() {
 
-            vertices[0] = vec3.clone([0.0000, 0.0000, -0.5/2])
-            vertices[1] = vec3.clone([0.0000, 0.4714/2, 0.16665/2]);
-            vertices[2] = vec3.clone([-0.40825/2, -0.2357/2, 0.16665/2]);
-            vertices[3] = vec3.clone([0.40825/2, -0.2357/2, 0.16665/2]);
+            vertices[0] = vec3.clone([0.0000, 0.0000, -0.5 / 2])
+            vertices[1] = vec3.clone([0.0000, 0.4714 / 2, 0.16665 / 2]);
+            vertices[2] = vec3.clone([-0.40825 / 2, -0.2357 / 2, 0.16665 / 2]);
+            vertices[3] = vec3.clone([0.40825 / 2, -0.2357 / 2, 0.16665 / 2]);
 
             baseColors[0] = vec3.clone([1.0, 0.0, 0.0])
             baseColors[1] = vec3.clone([0.0, 1.0, 0.0]);
@@ -103,7 +102,7 @@
             triangle(a, c, b, 0);
             triangle(a, c, d, 1);
             triangle(a, b, d, 2);
-            triangle( b, c, d, 3 );
+            triangle(b, c, d, 3);
         }
 
         function setupBuffers() {
@@ -137,62 +136,48 @@
         }
 
         function draw(dt) {
-            if (perviousTime === undefined) {
-                perviousTime = Date.now();
-            }
-            currentTime = Date.now(); //The Date.now() method returns the number of milliseconds elapsed since January 1, 1970 00:00:00 UTC.
-            dt = currentTime - perviousTime;
-            previousTime = currentTime;
-
-            timeSinceLastUpdate = dt / 1000; //in seconds
-
-            while (timeSinceLastUpdate > TimePerFrame) {
-                timeSinceLastUpdate -= TimePerFrame;               
-                movement = distance;
-            }
-
 
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             gl.bindVertexArray(vertexArray);
             gl.uniform2f(shaderProg.uMovement, movement[0], movement[1]);
             gl.drawArrays(gl.TRIANGLES, 0, vertexBuffer.numberOfItems);
             gl.bindVertexArray(null);
-            window.requestAnimationFrame(draw);
+
         }
 
         window.addEventListener("keydown", function (e) {
             //http://webgl-hooman.blogspot.com/2018/08/javascript-keycode.html
             //left arrow:37 , a:65
             //up arrow:38 , w:87
-            //right arrow:39 , d:68   
+            //right arrow:39 , d:68
             //down arrow:40, s:83
 
             switch (e.keyCode) {
                 case 37:
                 case 65:
-                    distance[0] -= PlayerSpeed * TimePerFrame;
-                    console.log("left " + movement[0] + "," +  movement[1]);
+                    movement[0] -= PlayerSpeed * TimePerFrame;
+                    console.log("left " + movement[0] + "," + movement[1]);
                     break;
                 case 38:
                 case 87:
-                    distance[1] += PlayerSpeed * TimePerFrame;
+                    movement[1] += PlayerSpeed * TimePerFrame;
                     console.log("up " + movement[0] + "," + movement[1]);
                     break;
                 case 39:
                 case 68:
-                    distance[0] += PlayerSpeed * TimePerFrame;
+                    movement[0] += PlayerSpeed * TimePerFrame;
                     console.log("right " + movement[0] + "," + movement[1]);
                     break;
                 case 40:
                 case 83:
-                    distance[1] -= PlayerSpeed * TimePerFrame; 
+                    movement[1] -= PlayerSpeed * TimePerFrame;
                     console.log("down " + movement[0] + "," + movement[1]);
                     break;
                 default:
                     break;
             }
         });
-        
+
 
     </script>
 </head>
