@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title> Interactive Perspective viewing of a Table</title>
+  <style>
+      #overlay {
+          background-color: rgba(0, 0, 0, 0.7);
+          color: white;
+          font-family: monospace;
+          padding: 1em;
+          border-radius: 1em;
+          border: 1px solid #f00;
+          text-shadow: 0px 0px 1px white;
+      }
+  </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+    <script src="Common/js/RenderLoop.js"></script>
+    <script src="Common/js/jquery-3.3.1.min.js"></script>
+    <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
+    <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
+    <link href='Common/css/style.css' type='text/css' rel='stylesheet' />
+
+    <script>
+    "use strict"
+        var gl;
+        var vertexArray;
+        var vertexArray2;
+        var vertexBuffer;
+        var vertexBuffer2;
+        var colorBuffer;
+        var shaderProg;
+        var shaderProg2;
+        var vColor;
+        var translations = [];
+        var triangleColors = [];
+        var rLoop;
+        var modelViewMatrix = mat4.create();
+        var projectionMatrix = mat4.create();
+        var modelViewMatrixStack = [];
+        const at = vec3.clone([0.0, 0.0, 0.0]);
+        const up = vec3.clone([0.0, 1.0, 0.0]);
+        var near = -1;
+        var far = 1;
+        var radius = 0.5;
+        var radiuseye = 0.5;
+        var theta = 10.0 * Math.PI / 180.0;
+        var phi =  0.0;
+        var dr = 5.0 * Math.PI / 180.0;
+
+        var left = -100.0;
+        var right = 100.0;
+        var ytop = 100.0;
+        var bottom = -100.0;
+        var cubeVertexPositionBuffer;
+        var cubeVertexIndexBuffer;
+
+
+        window.addEventListener("load", function () {
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            setupShaders()
+            setupBuffers()
+            rLoop = new RenderLoop(draw).start();
+
+        });
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position");
+            vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
+            shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
+            shaderProg.projectionMatrixLoc = gl.getUniformLocation(shaderProg, "projectionMatrix");
+
+            gl.useProgram(null);
+
+            shaderProg2 = ShaderUtil.domShaderProgram(gl, "vertex_shader2", "fragment_shader2", true);
+            gl.useProgram(shaderProg2);
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg2, "a_position");
+            shaderProg.vColor = gl.getAttribLocation(shaderProg2, "vColorAttr");
+            gl.useProgram(null);
+        }
+        function setupCoordinates() {
+            //Dynamiclly create a grid
+            var myVerts = [];
+
+            var verts = [-1.0,0.0,0.0, 1.0,0.0,0.0, 0.0, -1.0,0.0, 0.0, 1.0,0.0]; //x,y coordinates 4 vertices
+
+            myVerts = new Float32Array(verts);
+            return myVerts;
+        }
+
+        function setupVertices() {
+            //Dynamiclly create a grid
+            var myVerts = [];
+            var colors = [];
+              colors[0] =[  1.0, 0.0, 0.0];
+              colors[1] = [  0.0, 1.0, 0.0];
+              colors[2]=  [ 0.0, 0.0, 1.0];
+              colors[3]= [0.0,0.0,0.0];
+
+            var verts = [
+              // Front face
+              1.0,  1.0,  1.0, //v0
+             -1.0,  1.0,  1.0, //v1
+             -1.0, -1.0,  1.0, //v2
+              1.0, -1.0,  1.0, //v3
+
+              // Back face
+              1.0,  1.0, -1.0, //v4
+             -1.0,  1.0, -1.0, //v5
+             -1.0, -1.0, -1.0, //v6
+              1.0, -1.0, -1.0, //v7
+
+              // Left face
+             -1.0,  1.0,  1.0, //v8
+             -1.0,  1.0, -1.0, //v9
+             -1.0, -1.0, -1.0, //v10
+             -1.0, -1.0,  1.0, //v11
+
+              // Right face
+              1.0,  1.0,  1.0, //12
+              1.0, -1.0,  1.0, //13
+              1.0, -1.0, -1.0, //14
+              1.0,  1.0, -1.0, //15
+
+               // Top face
+               1.0,  1.0,  1.0, //v16
+               1.0,  1.0, -1.0, //v17
+              -1.0,  1.0, -1.0, //v18
+              -1.0,  1.0,  1.0, //v19
+
+               // Bottom face
+               1.0, -1.0,  1.0, //v20
+               1.0, -1.0, -1.0, //v21
+              -1.0, -1.0, -1.0, //v22
+              -1.0, -1.0,  1.0, //v23
+            ];
+
+            myVerts = new Float32Array(verts);
+
+            triangleColors.push(...colors[0]);
+            triangleColors.push(...colors[1]);
+            triangleColors.push(...colors[2]);
+            return myVerts;
+        }
+
+        function setupBuffers() {
+            gl.useProgram(shaderProg);
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            var vertices = setupVertices();
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = vertices.length / 3;
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
+            cubeVertexIndexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+            var cubeVertexIndices = [
+                      0, 1, 2,      0, 2, 3,    // Front face
+                      4, 6, 5,      4, 7, 6,    // Back face
+                      8, 9, 10,     8, 10, 11,  // Left face
+                      12, 13, 14,   12, 14, 15, // Right face
+                      16, 17, 18,   16, 18, 19, // Top face
+                      20, 22, 21,   20, 23, 22  // Bottom face
+                  ];
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices),
+                          gl.STATIC_DRAW);
+            cubeVertexIndexBuffer.itemSize = 1;
+            cubeVertexIndexBuffer.numberOfItems = 36;
+
+
+
+            //use the following if you want to pass color per vertex
+            //colorBuffer = gl.createBuffer();
+            //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleColors), gl.STATIC_DRAW);
+            //colorBuffer.itemSize = 3;
+            //colorBuffer.numberOfItems = 6;
+            //gl.enableVertexAttribArrayshaderProg.(vColor);
+            //gl.vertexAttribPointer(shaderProg.vColor, 3, gl.FLOAT, false, 0, 0);
+
+
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+            gl.useProgram(shaderProg2);
+            vertexArray2 = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray2);
+            vertexBuffer2 = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer2);
+            var vertices = setupCoordinates();
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = vertices.length / 3;
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
+            //use the following two lines this if every square has the same color --> solid brown
+            gl.disableVertexAttribArray(shaderProg.vColor);
+            gl.vertexAttrib3f(shaderProg.vColor, 139.0 / 255.0, 69.0 / 255.0, 19.0 / 255.0);
+
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+        }
+        function draw() {
+            gl.fClear();
+            //draw x-y axes
+            gl.useProgram(shaderProg2);
+            gl.bindVertexArray(vertexArray2);
+            gl.drawArrays(gl.LINES, 0, 4);
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+            gl.useProgram(shaderProg);
+            gl.bindVertexArray(vertexArray);
+
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            mat4.perspective(projectionMatrix, 70.0, gl.canvas.width / gl.canvas.height,
+                             0.1, 100.0);
+            modelViewMatrix = mat4.create();
+            mat4.lookAt(modelViewMatrix,[8.0, 5.0, -10.0],[0.0, 0.0, 0.0], [0.0, 1.0,0.0] );
+
+
+            gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+            gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
+
+            pushModelViewMatrix();
+            mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 1.1, 0.0]);
+            gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+
+            //drawCube(1.0,0.0, 0.0);
+              drawTable();
+                popModelViewMatrix();
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+        }
+
+        function drawCube(r,g,b) {
+
+          // Disable vertex attrib array and use constant color for the cube.
+          gl.disableVertexAttribArray(shaderProg.vColor);
+          // Set color
+          gl.vertexAttrib3f(shaderProg.vColor, r, g, b);
+          gl.drawElements(gl.TRIANGLES, cubeVertexIndexBuffer.numberOfItems,
+                          gl.UNSIGNED_SHORT, 0);
+        }
+
+        function pushModelViewMatrix() {
+          var copyToPush = mat4.clone(modelViewMatrix);
+          modelViewMatrixStack.push(copyToPush);
+        }
+
+        function popModelViewMatrix() {
+          if (modelViewMatrixStack.length == 0) {
+            throw "Error popModelViewMatrix() - Stack was empty ";
+          }
+          modelViewMatrix = modelViewMatrixStack.pop();
+        }
+
+        function drawTable(){
+          // Draw table top
+          pushModelViewMatrix();
+          mat4.translate(modelViewMatrix, modelViewMatrix,[0.0, 1.0, 0.0]);
+          mat4.scale(modelViewMatrix,  modelViewMatrix, [2.0, 0.1, 2.0]);
+          gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+          // Draw the actual cube (now scaled to a cuboid) in brown color
+          drawCube(0.72, 0.53, 0.04, 1.0); // arguments set brown color
+          popModelViewMatrix();
+
+          // Draw table legs
+          for (var i=-1; i<=1; i+=2) {
+            for (var j= -1; j<=1; j+=2) {
+              pushModelViewMatrix();
+              mat4.translate(modelViewMatrix, modelViewMatrix, [i*1.9, -0.1, j*1.9]);
+              mat4.scale(modelViewMatrix, modelViewMatrix, [0.1, 1.0, 0.1]);
+              gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+              drawCube(0.72, 0.53, 0.04, 1.0); // argument sets brown color
+              popModelViewMatrix();
+            }
+          }
+        }
+  </script>
+        <script>
+            $(function () {
+                $("#increaseZ-btn").button();
+                $("#increaseZ-btn").click(function () { near *= 1.1; far *= 1.1; });
+                $("#decreaseZ-btn").button();
+                $("#decreaseZ-btn").click(function () { near *= 0.9; far *= 0.9; });
+                $("#increaseRadius-btn").button();
+                $("#increaseRadius-btn").click(function () { radiuseye *= 1.1; });
+                $("#decreaseRadius-btn").button();
+                $("#decreaseRadius-btn").click(function () { radiuseye *= 0.9; });
+                $("#increaseTheta-btn").button();
+                $("#increaseTheta-btn").click(function () { theta += dr; });
+                $("#decreaseTheta-btn").button();
+                $("#decreaseTheta-btn").click(function () { theta -= dr; });
+                $("#increasePhi-btn").button();
+                $("#increasePhi-btn").click(function () { phi += dr; });
+                $("#decreasePhi-btn").button();
+                $("#decreasePhi-btn").click(function () { phi -= dr; });
+
+            });
+        </script>
+      </head>
+      <body>
+
+        <canvas id="myGLCanvas"></canvas>
+        <div id="overlay">
+            Interactive Orthographic viewing of a table
+            <p />
+            <button id="increaseZ-btn">Increase Z</button>
+            <button id="decreaseZ-btn">Decrease Z</button>
+            <button id="increaseRadius-btn">Increase R</button>
+            <button id="decreaseRadius-btn">Decrease R</button>
+            <p> </p>
+            <button id="increaseTheta-btn">Increase theta</button>
+            <button id="decreaseTheta-btn">Decrease theta</button>
+            <button id="increasePhi-btn">Increase phi</button>
+            <button id="decreasePhi-btn">Decrease phi</button>
+        </div>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+        in vec3 vColorAttr;
+        out vec4 vColor;
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+
+        void main(void){
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(a_position, 1.0);
+
+        vColor = vec4(vColorAttr, 1.0);
+        }
+
+
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision highp float;
+        in vec4 vColor;
+        out vec4 finalColor;
+        void main(void) {
+        finalColor = vColor;
+        }
+    </script>
+    <script id="vertex_shader2" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+        in vec3 vColorAttr;
+        out vec4 vColor;
+
+        void main(void){
+
+        gl_Position = vec4(a_position, 1.0);
+
+        vColor = vec4(vColorAttr, 1.0);
+        }
+
+
+    </script>
+    <script id="fragment_shader2" type="x-shader/x-fragment">#version 300 es
+        precision highp float;
+        in vec4 vColor;
+        out vec4 finalColor;
+        void main(void) {
+        finalColor = vColor;
+        }
+    </script>
+
+</body>
+</html>
