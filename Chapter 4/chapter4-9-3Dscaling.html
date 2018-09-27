@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>Depth Test</title>
+    <title>Cuboids</title>
     <style>
         html, body {
             margin: 0px;
@@ -88,14 +88,22 @@
             vertices[6] = vec3.clone([0.25, 0.25, -0.25]);
             vertices[7] = vec3.clone([0.25, -0.25, -0.25]);
 
-            vertexColors[0] = vec3.clone([0.0, 0.0, 0.0]);// black
-            vertexColors[1] = vec3.clone([1.0, 0.0, 0.0]);// red
-            vertexColors[2] = vec3.clone([1.0, 1.0, 0.0]);// yellow
-            vertexColors[3] = vec3.clone([0.0, 1.0, 0.0]);// green
-            vertexColors[4] = vec3.clone([0.0, 0.0, 1.0]);// blue
-            vertexColors[5] = vec3.clone([1.0, 0.0, 1.0]);// magenta
-            vertexColors[6] = vec3.clone([0.0, 1.0, 1.0]); // cyan
-            vertexColors[7] = vec3.clone([1.0, 1.0, 1.0]);// white
+            //vertexColors[0] = vec3.clone([0, 0, 0]);// black
+            //vertexColors[1] = vec3.clone([255, 0, 0]);// red
+            //vertexColors[2] = vec3.clone([255, 255, 0]);// yellow
+            //vertexColors[3] = vec3.clone([0, 255, 0]);// green
+            //vertexColors[4] = vec3.clone([0, 0, 255]);// blue
+            //vertexColors[5] = vec3.clone([255, 0, 255]);// magenta
+            //vertexColors[6] = vec3.clone([0, 255, 255]); // cyan
+            //vertexColors[7] = vec3.clone([255, 255, 255]);// white
+            vertexColors[0] =  vec3.clone([244,164,96]);// sandy brown
+            vertexColors[1] = vec3.clone([222,184,135]); //buly wood
+            vertexColors[2] = vec3.clone([205,133,63]);// peru
+            vertexColors[3] = vec3.clone([210,105,30]);// chocolate
+            vertexColors[4] = vec3.clone([139,69,19]);// saddle brown
+            vertexColors[5] = vec3.clone([160,82,45]);// sienna
+            vertexColors[6] = vec3.clone([165,42,42]); // brown
+            vertexColors[7] = vec3.clone([128,0,0]);// maroon
 
             var indices = [a, b, c, a, c, d];
 
@@ -130,10 +138,12 @@
 
 
             gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
-            gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW );
+            gl.bufferData( gl.ARRAY_BUFFER, new Uint8Array(colors), gl.STATIC_DRAW );
             gl.enableVertexAttribArray( shaderProg.vColor );
-            gl.vertexAttribPointer( shaderProg.vColor, 3, gl.FLOAT, false, 0, 0 );
+            gl.vertexAttribPointer( shaderProg.vColor, 3, gl.UNSIGNED_BYTE, true, 0, 0 );
 
+            //gl.disableVertexAttribArray(shaderProg.vColor);
+            //gl.vertexAttrib3f(shaderProg.vColor, 139, 69, 19);
 
             gl.bindVertexArray(null);
         }
@@ -192,7 +202,7 @@
 
         gl_PointSize = uPointSize;
         gl_Position = rz * ry * rx *  scaling * vec4(vPositionAttr, 1.0);
-        vColor = vec4(vColorAttr, 1.0);
+        vColor = vec4(vColorAttr, 1);
         }
     </script>
     <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
