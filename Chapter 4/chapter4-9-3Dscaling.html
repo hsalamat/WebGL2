@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Cuboids</title>
@@ -43,14 +43,12 @@
         var vertices = [];
         var vertexColors = [];
 
-        window.addEventListener("load", function () {
-            //............................................
-            //Get our extended GL Context Object
+        window.addEventListener("load", function () {ct
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
             gl.enable(gl.DEPTH_TEST);
             setupShaders()
             setupBuffers()
-            draw();					//Draw the triangle
+            draw();
         });
 
         function setupShaders() {
@@ -97,7 +95,7 @@
             //vertexColors[6] = vec3.clone([0, 255, 255]); // cyan
             //vertexColors[7] = vec3.clone([255, 255, 255]);// white
             vertexColors[0] =  vec3.clone([244,164,96]);// sandy brown
-            vertexColors[1] = vec3.clone([222,184,135]); //buly wood
+            vertexColors[1] = vec3.clone([222,184,135]); //burly wood
             vertexColors[2] = vec3.clone([205,133,63]);// peru
             vertexColors[3] = vec3.clone([210,105,30]);// chocolate
             vertexColors[4] = vec3.clone([139,69,19]);// saddle brown
