@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>translation in the application</title>
@@ -149,11 +149,11 @@
             gl.bindVertexArray(vertexArray);
             var translation = mat4.create();
             mat4.set(translation,
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
+                1.0, 0.0, 0.0, 0.5,
+                0.0, 1.0, 0.0, 0.5,
                 0.0, 0.0, 1.0, 0.0,
-                0.5, 0.5, 0.0, 1.0);
-            gl.uniformMatrix4fv(shaderProg.uTranslationLoc, false, translation);
+                0.0, 0.0, 0.0, 1.0);
+            gl.uniformMatrix4fv(shaderProg.uTranslationLoc, true, translation);
             gl.drawArrays(gl.TRIANGLES, 0, 3);
             gl.bindVertexArray(null);
             gl.useProgram(null);
