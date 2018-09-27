@@ -21,7 +21,6 @@
     <script src="Common/js/jquery-3.3.1.min.js"></script>
     <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
     <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
-    <link href='Common/css/style.css' type='text/css' rel='stylesheet' />
 
     <script>
     "use strict"
@@ -34,26 +33,28 @@
         var shaderProg;
         var shaderProg2;
         var vColor;
+        var points = [];
+        var colors = [];
+        var vertices = [];
+        var vertexColors = [];
         var translations = [];
-        var triangleColors = [];
         var rLoop;
         var modelViewMatrix = mat4.create();
         var projectionMatrix = mat4.create();
         var modelViewMatrixStack = [];
+        var fovy = glMatrix.toRadian(70.0);  // vertical Field-of-view (in Y direction) angle (in radians)
+
         const at = vec3.clone([0.0, 0.0, 0.0]);
         const up = vec3.clone([0.0, 1.0, 0.0]);
-        var near = -1;
-        var far = 1;
-        var radius = 0.5;
-        var radiuseye = 0.5;
-        var theta = 10.0 * Math.PI / 180.0;
-        var phi =  0.0;
+        var near = 0.1;
+        var far = 100;
+        var radius = 10.0;
+        var aspect = 1.0;
+        //var theta = 10.0 * Math.PI / 180.0;
+        var theta = 0.8726646259971648;
+        var phi =  1.5707963267948966;
         var dr = 5.0 * Math.PI / 180.0;
 
-        var left = -100.0;
-        var right = 100.0;
-        var ytop = 100.0;
-        var bottom = -100.0;
         var cubeVertexPositionBuffer;
         var cubeVertexIndexBuffer;
 
@@ -92,58 +93,43 @@
         }
 
         function setupVertices() {
-            //Dynamiclly create a grid
-            var myVerts = [];
-            var colors = [];
-              colors[0] =[  1.0, 0.0, 0.0];
-              colors[1] = [  0.0, 1.0, 0.0];
-              colors[2]=  [ 0.0, 0.0, 1.0];
-              colors[3]= [0.0,0.0,0.0];
 
-            var verts = [
-              // Front face
-              1.0,  1.0,  1.0, //v0
-             -1.0,  1.0,  1.0, //v1
-             -1.0, -1.0,  1.0, //v2
-              1.0, -1.0,  1.0, //v3
+          quad(1, 0, 3, 2);
+          quad(2, 3, 7, 6);
+          quad(3, 0, 4, 7);
+          quad(6, 5, 1, 2);
+          quad(4, 5, 6, 7);
+          quad(5, 4, 0, 1);
 
-              // Back face
-              1.0,  1.0, -1.0, //v4
-             -1.0,  1.0, -1.0, //v5
-             -1.0, -1.0, -1.0, //v6
-              1.0, -1.0, -1.0, //v7
+        }
+        function quad(a, b, c, d) {
 
-              // Left face
-             -1.0,  1.0,  1.0, //v8
-             -1.0,  1.0, -1.0, //v9
-             -1.0, -1.0, -1.0, //v10
-             -1.0, -1.0,  1.0, //v11
+            vertices[0] = vec3.clone([-1.0, -1.0, 1.0]);
+            vertices[1] = vec3.clone([-1.0, 1.0, 1.0]);
+            vertices[2] = vec3.clone([1.0, 1.0, 1.0]);
+            vertices[3] = vec3.clone([1.0, -1.0, 1.0]);
+            vertices[4] = vec3.clone([-1.0, -1.0, -1.0]);
+            vertices[5] = vec3.clone([-1.0, 1.0, -1.0]);
+            vertices[6] = vec3.clone([1.0, 1.0, -1.0]);
+            vertices[7] = vec3.clone([1.0, -1.0, -1.0]);
 
-              // Right face
-              1.0,  1.0,  1.0, //12
-              1.0, -1.0,  1.0, //13
-              1.0, -1.0, -1.0, //14
-              1.0,  1.0, -1.0, //15
+            vertexColors[0] =  vec3.clone([244,164,96]);// sandy brown
+            vertexColors[1] = vec3.clone([222,184,135]); //buly wood
+            vertexColors[2] = vec3.clone([205,133,63]);// peru
+            vertexColors[3] = vec3.clone([210,105,30]);// chocolate
+            vertexColors[4] = vec3.clone([139,69,19]);// saddle brown
+            vertexColors[5] = vec3.clone([160,82,45]);// sienna
+            vertexColors[6] = vec3.clone([165,42,42]); // brown
+            vertexColors[7] = vec3.clone([128,0,0]);// maroon
 
-               // Top face
-               1.0,  1.0,  1.0, //v16
-               1.0,  1.0, -1.0, //v17
-              -1.0,  1.0, -1.0, //v18
-              -1.0,  1.0,  1.0, //v19
+            var indices = [a, b, c, a, c, d];
 
-               // Bottom face
-               1.0, -1.0,  1.0, //v20
-               1.0, -1.0, -1.0, //v21
-              -1.0, -1.0, -1.0, //v22
-              -1.0, -1.0,  1.0, //v23
-            ];
+            for (var i = 0; i < indices.length; ++i) {
+                points.push(...vertices[indices[i]]);
 
-            myVerts = new Float32Array(verts);
-
-            triangleColors.push(...colors[0]);
-            triangleColors.push(...colors[1]);
-            triangleColors.push(...colors[2]);
-            return myVerts;
+                // different color for all faces
+                colors.push(...vertexColors[a]);
+              }
         }
 
         function setupBuffers() {
@@ -152,39 +138,19 @@
             gl.bindVertexArray(vertexArray);
             vertexBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            var vertices = setupVertices();
-            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+            setupVertices();
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
             vertexBuffer.itemSize = 3;
-            vertexBuffer.numberOfItems = vertices.length / 3;
+            vertexBuffer.numberOfItems = points.length / 3;
+
             gl.enableVertexAttribArray(shaderProg.aPositionLoc);
             gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
 
-            cubeVertexIndexBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
-            var cubeVertexIndices = [
-                      0, 1, 2,      0, 2, 3,    // Front face
-                      4, 6, 5,      4, 7, 6,    // Back face
-                      8, 9, 10,     8, 10, 11,  // Left face
-                      12, 13, 14,   12, 14, 15, // Right face
-                      16, 17, 18,   16, 18, 19, // Top face
-                      20, 22, 21,   20, 23, 22  // Bottom face
-                  ];
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices),
-                          gl.STATIC_DRAW);
-            cubeVertexIndexBuffer.itemSize = 1;
-            cubeVertexIndexBuffer.numberOfItems = 36;
-
-
-
-            //use the following if you want to pass color per vertex
-            //colorBuffer = gl.createBuffer();
-            //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-            //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleColors), gl.STATIC_DRAW);
-            //colorBuffer.itemSize = 3;
-            //colorBuffer.numberOfItems = 6;
-            //gl.enableVertexAttribArrayshaderProg.(vColor);
-            //gl.vertexAttribPointer(shaderProg.vColor, 3, gl.FLOAT, false, 0, 0);
-
+            colorBuffer = gl.createBuffer();
+            gl.bindBuffer( gl.ARRAY_BUFFER, colorBuffer );
+            gl.bufferData( gl.ARRAY_BUFFER, new Uint8Array(colors), gl.STATIC_DRAW );
+            gl.enableVertexAttribArray( shaderProg.vColor );
+            gl.vertexAttribPointer( shaderProg.vColor, 3, gl.UNSIGNED_BYTE, true, 0, 0 );
 
             gl.bindVertexArray(null);
             gl.useProgram(null);
@@ -207,6 +173,28 @@
 
             gl.bindVertexArray(null);
             gl.useProgram(null);
+
+            document.getElementById("zFarSlider").onchange = function (event) {
+                far = event.target.value;
+            };
+            document.getElementById("zNearSlider").onchange = function (event) {
+                near = event.target.value;
+            };
+            document.getElementById("radiusSlider").onchange = function (event) {
+                radius = event.target.value;
+            };
+            document.getElementById("thetaSlider").onchange = function (event) {
+                theta = event.target.value * Math.PI / 180.0;
+            };
+            document.getElementById("phiSlider").onchange = function (event) {
+                phi = event.target.value * Math.PI / 180.0;
+            };
+            document.getElementById("aspectSlider").onchange = function (event) {
+                aspect = event.target.value;
+            };
+            document.getElementById("fovSlider").onchange = function (event) {
+                fovy = event.target.value;
+            };
         }
         function draw() {
             gl.fClear();
@@ -222,10 +210,15 @@
 
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            mat4.perspective(projectionMatrix, 70.0, gl.canvas.width / gl.canvas.height,
-                             0.1, 100.0);
+            //mat4.perspective(projectionMatrix, 70.0, gl.canvas.width / gl.canvas.height,
+            //                 0.1, 100.0);
             modelViewMatrix = mat4.create();
-            mat4.lookAt(modelViewMatrix,[8.0, 5.0, -10.0],[0.0, 0.0, 0.0], [0.0, 1.0,0.0] );
+            //mat4.lookAt(modelViewMatrix,[8.0, 5.0, -10.0],[0.0, 0.0, 0.0], [0.0, 1.0,0.0] );
+            let eye = vec3.clone([radius * Math.sin(theta) * Math.cos(phi),
+                radius * Math.sin(theta) * Math.sin(phi), radius * Math.cos(theta)]);
+
+            mat4.lookAt(modelViewMatrix, eye, at, up);
+            mat4.perspective(projectionMatrix, fovy, aspect, near, far);
 
 
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
@@ -235,21 +228,14 @@
             mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 1.1, 0.0]);
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
 
-            //drawCube(1.0,0.0, 0.0);
-              drawTable();
-                popModelViewMatrix();
+            drawTable();
+            popModelViewMatrix();
             gl.bindVertexArray(null);
             gl.useProgram(null);
         }
 
         function drawCube(r,g,b) {
-
-          // Disable vertex attrib array and use constant color for the cube.
-          gl.disableVertexAttribArray(shaderProg.vColor);
-          // Set color
-          gl.vertexAttrib3f(shaderProg.vColor, r, g, b);
-          gl.drawElements(gl.TRIANGLES, cubeVertexIndexBuffer.numberOfItems,
-                          gl.UNSIGNED_SHORT, 0);
+          gl.drawArrays(gl.TRIANGLES, 0, 36);
         }
 
         function pushModelViewMatrix() {
@@ -287,44 +273,51 @@
           }
         }
   </script>
-        <script>
-            $(function () {
-                $("#increaseZ-btn").button();
-                $("#increaseZ-btn").click(function () { near *= 1.1; far *= 1.1; });
-                $("#decreaseZ-btn").button();
-                $("#decreaseZ-btn").click(function () { near *= 0.9; far *= 0.9; });
-                $("#increaseRadius-btn").button();
-                $("#increaseRadius-btn").click(function () { radiuseye *= 1.1; });
-                $("#decreaseRadius-btn").button();
-                $("#decreaseRadius-btn").click(function () { radiuseye *= 0.9; });
-                $("#increaseTheta-btn").button();
-                $("#increaseTheta-btn").click(function () { theta += dr; });
-                $("#decreaseTheta-btn").button();
-                $("#decreaseTheta-btn").click(function () { theta -= dr; });
-                $("#increasePhi-btn").button();
-                $("#increasePhi-btn").click(function () { phi += dr; });
-                $("#decreasePhi-btn").button();
-                $("#decreasePhi-btn").click(function () { phi -= dr; });
 
-            });
-        </script>
       </head>
       <body>
-
-        <canvas id="myGLCanvas"></canvas>
         <div id="overlay">
-            Interactive Orthographic viewing of a table
+            Interactive Perspective viewing of a table
             <p />
-            <button id="increaseZ-btn">Increase Z</button>
-            <button id="decreaseZ-btn">Decrease Z</button>
-            <button id="increaseRadius-btn">Increase R</button>
-            <button id="decreaseRadius-btn">Decrease R</button>
-            <p> </p>
-            <button id="increaseTheta-btn">Increase theta</button>
-            <button id="decreaseTheta-btn">Decrease theta</button>
-            <button id="increasePhi-btn">Increase phi</button>
-            <button id="decreasePhi-btn">Decrease phi</button>
-        </div>
+            <div>
+                zNear .01<input id="zNearSlider" type="range"
+                                min=".01" max="30" step="0.1" value="0.3" />
+                30
+            </div>
+            <div>
+                zFar 3<input id="zFarSlider" type="range"
+                             min="30" max="100" step="3.0" value="100" />
+                100
+            </div>
+            <div>
+                radius 0.05<input id="radiusSlider" type="range"
+                                  min="0.05" max="10" step="0.1" value="10" />
+                10
+            </div>
+            <div>
+                theta -90<input id="thetaSlider" type="range"
+                                min="-90" max="90" step="5" value="0" />
+                90
+            </div>
+            <div>
+                phi -90<input id="phiSlider" type="range"
+                              min="-90" max="90" step="5" value="90" />
+                90
+            </div>
+            <div>
+                fov 10<input id="fovSlider" type="range"
+                             min="10" max="120" step="5" value="45" />
+                120
+            </div>
+            <div>
+                aspect 0.5<input id="aspectSlider" type="range"
+                                 min="0.5" max="2" step="0.1" value="1" />
+                2
+            </div>
+            </div>
+          <div>
+            <canvas id="myGLCanvas"></canvas>
+          </div>
 
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
         in vec3 a_position;
