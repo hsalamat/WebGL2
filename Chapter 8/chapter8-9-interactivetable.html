@@ -234,9 +234,6 @@
             gl.useProgram(null);
         }
 
-        function drawCube(r,g,b) {
-          gl.drawArrays(gl.TRIANGLES, 0, 36);
-        }
 
         function pushModelViewMatrix() {
           var copyToPush = mat4.clone(modelViewMatrix);
@@ -256,8 +253,7 @@
           mat4.translate(modelViewMatrix, modelViewMatrix,[0.0, 1.0, 0.0]);
           mat4.scale(modelViewMatrix,  modelViewMatrix, [2.0, 0.1, 2.0]);
           gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
-          // Draw the actual cube (now scaled to a cuboid) in brown color
-          drawCube(0.72, 0.53, 0.04, 1.0); // arguments set brown color
+          gl.drawArrays(gl.TRIANGLES, 0, 36);
           popModelViewMatrix();
 
           // Draw table legs
@@ -267,7 +263,7 @@
               mat4.translate(modelViewMatrix, modelViewMatrix, [i*1.9, -0.1, j*1.9]);
               mat4.scale(modelViewMatrix, modelViewMatrix, [0.1, 1.0, 0.1]);
               gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
-              drawCube(0.72, 0.53, 0.04, 1.0); // argument sets brown color
+              gl.drawArrays(gl.TRIANGLES, 0, 36);
               popModelViewMatrix();
             }
           }
