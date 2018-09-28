@@ -31,7 +31,9 @@
     <script src="Common/js/shaders.js"></script>
     <script src="Common/js/gl-matrix.js"></script>
     <script src="Common/js/RenderLoop.js"></script>
-
+    <script src="Common/js/jquery-3.3.1.min.js"></script>
+    <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
+    <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
 
     <script>
         var gl;
@@ -49,6 +51,7 @@
 
         window.addEventListener("load", function () {
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            gl.enable(gl.DEPTH_TEST);
             setupShaders()
             setupBuffers()
             rLoop = new RenderLoop(draw).start();
@@ -58,20 +61,22 @@
             shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
             gl.useProgram(shaderProg);
             shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position");
-            vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
+            shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
             gl.useProgram(null);
 
             shaderProg2 = ShaderUtil.domShaderProgram(gl, "vertex_shader2", "fragment_shader2", true);
             gl.useProgram(shaderProg2);
-            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg2, "a_position");
-            vColor = gl.getAttribLocation(shaderProg2, "vColorAttr");
+            shaderProg2.aPositionLoc = gl.getAttribLocation(shaderProg2, "a_position");
+            shaderProg2.vColor = gl.getAttribLocation(shaderProg2, "vColorAttr");
             gl.useProgram(null);
         }
         function setupCoordinates() {
             //Dynamiclly create a grid
             var myVerts = [];
 
-            var verts = [-1.0,0.0,0.0, 1.0,0.0,0.0, 0.0, -1.0,0.0, 0.0, 1.0,0.0]; //x,y coordinates 4 vertices
+            var verts = [-1.0,0.0,0.0,   1.0,0.0,0.0,
+                        0.0,-1.0,0.0,    0.0, 1.0,0.0,
+                        0.0, 0.0,-1.0,   0.0, 0.0, 1.0]; //x,y,z coordinates 6 vertices
 
             myVerts = new Float32Array(verts);
             return myVerts;
@@ -81,9 +86,9 @@
             //Dynamiclly create a grid
             var myVerts = [];
             var colors = [];
-              colors[0] =[  1.0, 0.0, 0.0];
-              colors[1] = [  0.0, 1.0, 0.0];
-              colors[2]=  [ 0.0, 0.0, 1.0];
+              colors[0] =[1.0, 0.0, 0.0];
+              colors[1] = [0.0, 1.0, 0.0];
+              colors[2]=  [0.0, 0.0, 1.0];
               colors[3]= [0.0,0.0,0.0];
 
             var verts = [
@@ -119,8 +124,8 @@
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleColors), gl.STATIC_DRAW);
             colorBuffer.itemSize = 3;
             colorBuffer.numberOfItems = 6;
-            gl.enableVertexAttribArray(vColor);
-            gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(shaderProg.vColor);
+            gl.vertexAttribPointer(shaderProg.vColor, 3, gl.FLOAT, false, 0, 0);
 
             gl.bindVertexArray(null);
             gl.useProgram(null);
@@ -134,12 +139,8 @@
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
             vertexBuffer.itemSize = 3;
             vertexBuffer.numberOfItems = vertices.length / 3;
-            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
-            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
-
-            //use the following two lines this if every square has the same color --> solid brown
-            gl.disableVertexAttribArray(vColor);
-            gl.vertexAttrib3f(vColor, 139.0 / 255.0, 69.0 / 255.0, 19.0 / 255.0);
+            gl.enableVertexAttribArray(shaderProg2.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg2.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
 
             gl.bindVertexArray(null);
             gl.useProgram(null);
@@ -149,7 +150,13 @@
             //draw x-y axes
             gl.useProgram(shaderProg2);
             gl.bindVertexArray(vertexArray2);
-            gl.drawArrays(gl.LINES, 0, 4);
+            gl.disableVertexAttribArray(shaderProg2.vColor);
+            gl.vertexAttrib3f(shaderProg2.vColor, 1.0, 0.0, 0.0);
+            gl.drawArrays(gl.LINES, 0, 2);
+            gl.vertexAttrib3f(shaderProg2.vColor, 0, 255, 0);
+            gl.drawArrays(gl.LINES, 2, 2);
+            gl.vertexAttrib3f(shaderProg2.vColor, 0, 0, 255);
+            gl.drawArrays(gl.LINES, 4, 2);
             gl.bindVertexArray(null);
             gl.useProgram(null);
 
