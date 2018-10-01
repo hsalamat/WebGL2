@@ -85,9 +85,26 @@
 
         function setupCoordinates() {
             var myCoordinates = [
-                -1.0, 0.0, 0.0,  1.0, 0.0, 0.0,
+                -1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                -1.0, -0.8, 0.0, 1.0, -0.8, 0.0,
+                -1.0, -0.6, 0.0, 1.0, -0.6, 0.0,
+                -1.0, -0.4, 0.0, 1.0, -0.4, 0.0,
+                -1.0, -0.2, 0.0, 1.0, -0.2, 0.0,
+                -1.0, 0.2, 0.0, 1.0, 0.2, 0.0,
+                -1.0, 0.4, 0.0, 1.0, 0.4, 0.0,
+                -1.0, 0.6, 0.0, 1.0, 0.6, 0.0,
+                -1.0, 0.8, 0.0, 1.0, 0.8, 0.0,
                 0.0, -1.0, 0.0, 0.0, 1.0, 0.0,
+                -0.8, -1.0, 0.0, -0.8, 1.0, 0.0,
+                -0.6, -1.0, 0.0, -0.6, 1.0, 0.0,
+                -0.4, -1.0, 0.0, -0.4, 1.0, 0.0,
+                -0.2, -1.0, 0.0, -0.2, 1.0, 0.0,
+                0.2, -1.0, 0.0, 0.2, 1.0, 0.0,
+                0.4, -1.0, 0.0, 0.4, 1.0, 0.0,
+                0.6, -1.0, 0.0, 0.6, 1.0, 0.0,
+                0.8, -1.0, 0.0, 0.8, 1.0, 0.0,
                 0.0, 0.0, -1.0, 0.0, 0.0, 1.0,
+    
             ];
 
             return myCoordinates;
@@ -202,11 +219,11 @@
 
             gl.useProgram(shaderProg2);
             gl.bindVertexArray(vertexArray2);
-            gl.drawArrays(gl.LINES, 0, 2);
+            gl.drawArrays(gl.LINES, 0, 18);
             gl.vertexAttrib3f(shaderProg2.vColor, 0.0, 1.0, 0.0)
-            gl.drawArrays(gl.LINES, 2, 2);
+            gl.drawArrays(gl.LINES, 18, 18);
             gl.vertexAttrib3f(shaderProg2.vColor, 0.0, 0.0, 1.0)
-            gl.drawArrays(gl.LINES, 4, 2);
+            gl.drawArrays(gl.LINES, 36, 2);
             gl.bindVertexArray(null);
             gl.useProgram(null);
 
