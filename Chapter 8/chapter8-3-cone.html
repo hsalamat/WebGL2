@@ -1,0 +1,356 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Asynchronous Loading the floor with JSON and AJAX</title>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+    <script src="Common/js/Floor.js"></script>
+    <script src="Common/js/RenderLoop.js"></script>
+    <script src="Common/js/jquery-3.3.1.min.js"></script>
+    <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
+    <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
+
+
+    <script>
+    "use strict"
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var stripElementBuffer;
+        var shaderProg;
+        var vertexArray2;
+        var vertexBuffer2;
+        var stripElementBuffer2;
+        var shaderProg2;
+        var vColor;
+        var model = undefined;
+        var modelLoaded = false;
+        var position = [0.0,0.0,0.0];
+        var gRLoop;
+        const COORDS_WORLD = 0;
+        const COORDS_CAMERA = 1;
+        var coords = COORDS_WORLD;
+
+        window.addEventListener("load", function () {
+            //............................................
+            //Get our extended GL Context Object
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            gl.enable(gl.DEPTH_TEST);
+            setupShaders();
+            //loadModel('Common/models/cone.json');
+            //the following three lines are equivalent to loadModel to resolve cross origin
+            setupVertices();
+            setupBuffers();
+           gRLoop = new RenderLoop(draw, 5).start();
+        });
+
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);				//Activate the Shader
+            //Get Location of Uniforms and Attributes.
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position"),
+            shaderProg.uPointSizeLoc = gl.getUniformLocation(shaderProg, "uPointSize");
+            shaderProg.uColor = gl.getUniformLocation(shaderProg, "uColor");
+            shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
+            shaderProg.projectionMatrixLoc = gl.getUniformLocation(shaderProg, "projectionMatrix");
+            gl.useProgram(null);
+
+            shaderProg2 = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg2);				//Activate the Shader
+            //Get Location of Uniforms and Attributes.
+            shaderProg2.aPositionLoc = gl.getAttribLocation(shaderProg2, "a_position"),
+            shaderProg2.uPointSizeLoc = gl.getUniformLocation(shaderProg2, "uPointSize");
+            shaderProg2.uColor = gl.getUniformLocation(shaderProg2, "uColor");
+            shaderProg2.modelViewMatrixLoc = gl.getUniformLocation(shaderProg2, "modelViewMatrix");
+            shaderProg2.projectionMatrixLoc = gl.getUniformLocation(shaderProg2, "projectionMatrix");
+            gl.useProgram(null);
+
+        }
+
+        function setupVertices(){
+          model = {
+                      "vertices" : [0.0,6.0,-2.59787e-16,3.0,8.88178e-16,5.19574e-16,2.79742,8.88178e-16,-1.08372,2.21703,8.88178e-16,-2.02109,1.33722,4.44089e-16,-2.68549,0.276805,4.44089e-16,-2.9872,-0.820989,4.44089e-16,-2.88548,-1.8079,8.88178e-16,-2.39405,-2.55065,8.88178e-16,-1.5793,-2.94892,8.88178e-16,-0.551249,-2.94892,8.88178e-16,0.551249,-2.55065,8.88178e-16,1.5793,-1.8079,8.88178e-16,2.39405,-0.820989,1.33227e-15,2.88548,0.276805,1.33227e-15,2.9872,1.33722,1.33227e-15,2.68549,2.21703,8.88178e-16,2.02109,2.79742,8.88178e-16,1.08372,3.0,8.88178e-16,-2.46124e-09],
+                      "indices" : [0,1,2,0,2,3,0,3,4,0,4,5,0,5,6,0,6,7,0,7,8,0,8,9,0,9,10,0,10,11,0,11,12,0,12,13,0,13,14,0,14,15,0,15,16,0,16,17,0,17,18],
+                      "color" : [1.0,0.664,0.0,1.0]
+                  };
+
+                  Floor.build(80,2);
+                  Floor.color = [0.7, 0.7, 0.7, 1.0];
+       }
+
+
+
+        function setupBuffers() {
+
+            gl.useProgram(shaderProg);
+
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(model.vertices), gl.STATIC_DRAW);
+
+
+            stripElementBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, stripElementBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(model.indices), gl.STATIC_DRAW);
+
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+            gl.uniform3f(shaderProg.uColor, model.color[0], model.color[1], model.color[2]);
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+            gl.useProgram(shaderProg2);
+            vertexArray2 = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray2);
+
+            vertexBuffer2 = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer2);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Floor.vertices), gl.STATIC_DRAW);
+
+
+            stripElementBuffer2 = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, stripElementBuffer2);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(Floor.indices), gl.STATIC_DRAW);
+
+            gl.enableVertexAttribArray(shaderProg2.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg2.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+            gl.uniform3f(shaderProg2.uColor, Floor.color[0], Floor.color[1], Floor.color[2]);
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+        }
+
+        function draw() {
+            let modelViewMatrix = mat4.create();
+            let projectionMatrix = mat4.create();
+
+            let eye = vec3.clone([40, 20, 40]);
+            let fovy = glMatrix.toRadian(20.0);  // vertical Field-of-view (in Y direction) angle (in radians)
+            const at = vec3.clone([0.0, 0.0, 0.0]);
+            const up = vec3.clone([0.0, 1.0, 0.0]);
+            let near = 0.1;
+            let far = 1000.0;
+            let aspect = gl.canvas.width / gl.canvas.height;
+
+            mat4.lookAt(modelViewMatrix, eye, at, up);
+            mat4.perspective(projectionMatrix, fovy, aspect, near, far);
+
+            if(coords == COORDS_WORLD)
+            {mat4.translate(modelViewMatrix,modelViewMatrix,vec3.clone(position));}
+            else {
+              mat4.translate(modelViewMatrix,modelViewMatrix,vec3.clone(position));
+              mat4.invert(modelViewMatrix,modelViewMatrix);
+            }
+
+            displayMatrix(modelViewMatrix);
+
+            gl.useProgram(shaderProg);
+            gl.bindVertexArray(vertexArray);
+            gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+            gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
+            gl.drawElements(gl.TRIANGLES, model.indices.length, gl.UNSIGNED_SHORT, 0);
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+            gl.useProgram(shaderProg2);
+            gl.bindVertexArray(vertexArray2);
+            gl.uniformMatrix4fv(shaderProg2.modelViewMatrixLoc, false, modelViewMatrix);
+            gl.uniformMatrix4fv(shaderProg2.projectionMatrixLoc, false, projectionMatrix);
+            gl.drawElements(gl.LINES, Floor.indices.length, gl.UNSIGNED_SHORT, 0);
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+        }
+
+        /**
+       * Creates an AJAX request to load a model asynchronously
+       A new XMLHttpRequest object starts in state 0
+       When you successfully call .open() on the obect, the status changes to 1
+       When you successfully call .send() on the object, an HTTP request goes off to the server defined in .open(). Once the HTTP response headers have been received and processed the status changes to 2
+       Eventually, the actual content of the request will start coming in. When this begins, the status changes to 3
+       Finally, once all of the content is downloaded and is ready to be used, the status changes to 4
+       */
+        function loadModel(filename) {
+            var request = new XMLHttpRequest();
+            //var resource = "http://" + document.domain + filename
+            var resource = 'Common/models/cone.json';
+            request.open("GET", filename);
+            request.onreadystatechange = function () {
+                console.info(request.readyState + ' - ' + request.status);
+                if (request.readyState == 4) {
+                    if (request.status == 200) { //OK
+                        handleLoadedModel(filename, JSON.parse(request.responseText));
+                    }
+                    else if (document.domain.length == 0 && request.status == 0) { //OK but local, no web server
+                        handleLoadedModel(filename, JSON.parse(request.responseText));
+                    }
+                    else {
+                        alert('There was a problem loading the file :' + filename);
+                        alert('HTML error code: ' + request.status);
+                    }
+                }
+            }
+            request.send();
+        }
+
+        /**
+        * Creates the buffers that contain the geometry of the model
+        */
+        function handleLoadedModel(filename, payload) {
+
+            model = payload; //save our model in a global variable so we can retrieve it in draw()
+
+            alert(filename + ' has been retrieved from the server');
+            //alert("vertices:" + model.vertices);
+
+            modelLoaded = true;
+            validateload();
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function validateload() {
+            console.log('Taking a break...');
+            await sleep(2000);
+            if (model.vertices.length < 1) validateload(); //make sure the model is loaded
+            else {
+                setupBuffers();
+                draw();
+            }
+            console.log('Two second later');
+        }
+    </script>
+</head>
+<body>
+
+      <div id='contents'>
+<div id='canvasContainer'>
+<canvas id='myGLCanvas' width='480' height='400'>
+
+    </div>
+    <div id='bottom'>
+<table>
+<tr><td width='50%'>
+<h3> World coordinates</h3>
+<p>The model-view matrix transforms the world. Here we are just considering the <b>translation component</b> to see how the world moves.</p>
+For example, increase X to 10: you will se how the world is translated 10 units to the right (which is the same as requestUpdate the camera 10 units to the left!)</p>
+
+<h3> Camera coordinates</h3>
+<p>When you click on <b>Camera</b> the <i>inverse of the model-view matrix</i> is applied. Then if you increase X to 10 you will see how
+the camera is translated 10 units to the right (which is equivalent to move the world 10 units to the left!)</p>
+</td>
+<td style='vertical-align:top'>
+<table style='padding=4px'>
+<td>X:</td><td id='slider-x-value' width='30px'>0.0</td><td width='150px'><div id='slider-x'/></td>
+<td>
+    <div id='opt-coords'>
+        <input type='radio' id='opt-world' name='coords' checked='checked'/><label for='opt-world'>World</label>
+        <input type='radio' id='opt-camera' name='coords'/><label for='opt-camera'>Camera</label>
+    </div>
+</td>
+</tr>
+<tr>
+<td>Y:</td><td id='slider-y-value'  width='30px'>-2.0</td><td width='150px'><div id='slider-y'/></td>
+</tr>
+<tr>
+<td>Z:</td> <td id='slider-z-value'  width='30px'>-30.0</td><td width='150px'><div id='slider-z'/></td>
+</tr>
+</table>
+</td>
+<td align='center' style='vertical-align:top'>
+<table id='tbl-matrix'>
+<tr><td id='m0'></td><td id='m4'></td><td id='m8'></td><td id='m12' style='font-weight:bold'></td></tr>
+<tr><td id='m1'></td><td id='m5'></td><td id='m9'></td><td id='m13' style='font-weight:bold'></td></tr>
+<tr><td id='m2'></td><td id='m6'></td><td id='m10'></td><td id='m14' style='font-weight:bold'></td></tr>
+<tr><td id='m3'></td><td id='m7'></td><td id='m11'></td><td id='m15'></td></tr>
+</table>
+</td>
+</tr>
+</table>
+</div>
+
+<script>
+$('#slider-x').slider({value:0.0, min:-50.0, max:50.0, step:0.5, slide:function(){updatePosition('#slider-x');}});
+$('#slider-y').slider({value:-2.0, min:-50.0, max:50.0, step:0.5, slide:function(){updatePosition('#slider-y');}});
+$('#slider-z').slider({value:-30.0, min:-50.0, max:50.0, step:0.5, slide:function(){updatePosition('#slider-z');}});
+
+
+function updatePosition(selector){
+    var pos = $(selector).slider("value");
+    $(selector+'-value').html(pos);
+
+    if(selector == '#slider-x'){
+        position[0] = pos;
+    }
+    else if(selector == '#slider-y'){
+        position[1] = pos;
+    }
+    else if (selector == '#slider-z'){
+        position[2] = pos;
+    }
+}
+
+function updateSliders(){
+    $('#slider-x').slider("value",position[0]);
+    $('#slider-y').slider("value",position[1]);
+    $('#slider-z').slider("value",position[2]);
+    $('#slider-x-value').html(position[0]);
+    $('#slider-y-value').html(position[1]);
+    $('#slider-z-value').html(position[2]);
+}
+
+$('#opt-coords').buttonset();
+
+$('#opt-world').click(
+    function(){
+        //vec3.set(home,position);
+        updateSliders();
+        coords = COORDS_WORLD;
+});
+
+$('#opt-camera').click(
+    function(){
+        //vec3.set(home,position);
+        vec3.negate(position);
+        updateSliders();
+        coords = COORDS_CAMERA;
+});
+
+function displayMatrix(m){
+    var selector = '';
+    for(var i=0;i<16;i++){
+        selector = '#m'+i;
+        $(selector).html(m[i].toFixed(1));
+    }
+}
+
+</script>
+
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+
+        void main(void){
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(a_position, 1.0);
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        uniform vec3 uColor;
+        out vec4 finalColor;
+
+        void main(void) {
+        finalColor = vec4(uColor, 1.0);
+        }
+    </script>
+
+</body>
+</html>
