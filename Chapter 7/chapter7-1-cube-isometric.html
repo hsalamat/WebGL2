@@ -29,6 +29,10 @@
         var colors = [];
         var vertices = [];
         var vertexColors = [];
+        var vertexArray2;
+        var vertexBuffer2;
+        var colorBuffer2;
+        var shaderProg2;
 
         window.addEventListener("load", function () {
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
@@ -47,6 +51,26 @@
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
             gl.useProgram(null);
 
+            shaderProg2 = ShaderUtil.domShaderProgram(gl, "vertex_shader2", "fragment_shader2", true);
+            gl.useProgram(shaderProg2);				//Activate the Shader
+            //Get Location of Uniforms and Attributes.
+            shaderProg2.aPositionLoc = gl.getAttribLocation(shaderProg2, "vPositionAttr"),
+                shaderProg2.uPointSizeLoc = gl.getUniformLocation(shaderProg2, "uPointSize");				//Activate the Shader
+            gl.uniform1f(shaderProg2.uPointSizeLoc, 1.0);		//Store data to the shader's uniform variable uPointSize
+
+            shaderProg2.vColor = gl.getAttribLocation(shaderProg2, "vColorAttr");
+
+            gl.useProgram(null);
+
+        }
+
+        function setupCoordinates() {
+            var myCoordinates = [
+                -1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                0.0, -1.0, 0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, -1.0, 0.0, 0.0, 1.0,
+            ];
+            return myCoordinates;
         }
 
         function setupVertices() {
@@ -118,9 +142,50 @@
 
 
             gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+            gl.useProgram(shaderProg2);
+            vertexBuffer2 = gl.createBuffer();
+
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = points.length / 3;
+
+            colorBuffer = gl.createBuffer();
+
+            vertexArray2 = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray2);
+            var mycoordinates = setupCoordinates();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer2);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mycoordinates), gl.STATIC_DRAW);
+            gl.enableVertexAttribArray(shaderProg2.aPositionLoc);
+
+            gl.vertexAttribPointer(shaderProg2.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
+            gl.disableVertexAttribArray(shaderProg2.vColor);
+            gl.vertexAttrib3f(shaderProg2.vColor, 1.0, 0.0, 0.0);
+            //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer2);
+            //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+            //gl.enableVertexAttribArray(shaderProg2.vColor);
+            //gl.vertexAttribPointer(shaderProg2.vColor, 3, gl.FLOAT, false, 0, 0);
+
+
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
         }
 
         function draw() {
+
+          gl.useProgram(shaderProg2);
+          gl.bindVertexArray(vertexArray2);
+          gl.drawArrays(gl.LINES, 0, 2);
+          gl.vertexAttrib3f(shaderProg2.vColor, 0.0, 1.0, 0.0)
+          gl.drawArrays(gl.LINES, 2, 2);
+          gl.vertexAttrib3f(shaderProg2.vColor, 0.0, 0.0, 1.0)
+          gl.drawArrays(gl.LINES, 4, 2);
+          gl.bindVertexArray(null);
+          gl.useProgram(null);
+
+          gl.useProgram(shaderProg);
             gl.bindVertexArray(vertexArray);
 
             modelViewMatrix = mat4.create();
@@ -154,16 +219,19 @@
             //4.0
             //Suppose that we want to look at the same object from the negative x-axis.
             //mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -1]);
-            //mat4.rotateX(modelViewMatrix, modelViewMatrix, glMatrix.toRadian(-90)); 
+            //mat4.rotateX(modelViewMatrix, modelViewMatrix, glMatrix.toRadian(-90));
 
             //5.0
             //Suppose that we want to look at the same object from the positive x-axis.
             //mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -1]);
-            //mat4.rotateX(modelViewMatrix, modelViewMatrix, glMatrix.toRadian(90)); 
+            //mat4.rotateX(modelViewMatrix, modelViewMatrix, glMatrix.toRadian(90));
 
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
             gl.drawArrays(gl.TRIANGLES, 0, 36);
             gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+
         }
     </script>
 </head>
@@ -188,6 +256,32 @@
         }
     </script>
     <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        in vec4 vColor;
+        out vec4 finalColor;
+
+        void main(void) {
+        finalColor = vColor;
+        }
+    </script>
+    <script id="vertex_shader2" type="x-shader/x-vertex">#version 300 es
+
+        in vec3 vPositionAttr;
+        in vec3 vColorAttr;
+        out vec4 vColor;
+        uniform float uPointSize;
+
+        void main(void){
+
+        // Compute the sines and cosines of theta for each of
+        //   the three axes in one computation.
+
+        gl_PointSize = uPointSize;
+        gl_Position =   vec4(vPositionAttr, 1.0);
+        vColor = vec4(vColorAttr, 1.0);
+        }
+    </script>
+    <script id="fragment_shader2" type="x-shader/x-fragment">#version 300 es
         precision mediump float;
         in vec4 vColor;
         out vec4 finalColor;
