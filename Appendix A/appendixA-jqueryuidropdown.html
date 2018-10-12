@@ -1,0 +1,35 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>select</title>
+    <link rel="stylesheet" href="jquery-ui-1.12.1/jquery-ui.css">
+    <script src="jquery-3.3.1.min.js"></script>
+    <script src="jquery-ui-1.12.1/jquery-ui.js"></script>
+    <script>
+    $(function () {
+      $('#pizza_kind').prop('disabled', true);
+      
+      $("#pizza").change(function(event){
+      if ($("#pizza").is(":checked")) {
+          $('#pizza_kind').prop('disabled', false);
+      }
+      else {
+          $('#pizza_kind').prop('disabled', true);
+      }
+    });
+
+    });
+    </script>
+</head>
+<body>
+  <input type="checkbox" id="pizza" name="pizza" value="yes">
+  <label for="pizza">I would like to order a</label>
+  <select id="pizza_kind" name="pizza_kind">
+    <option>(choose one)</option>
+    <option value="margaritha">Margaritha</option>
+    <option value="hawai">Hawai</option>
+  </select>
+  pizza.
+</body>
+</html>
