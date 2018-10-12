@@ -35,32 +35,38 @@
  showFrontFace       = true,
  showBackFace        = true;
 
+ var depthFunc = undefined,
+    showDepth = true;
+
+
 
         window.addEventListener("load", function () {
             //............................................
             //Get our extended GL Context Object
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
-            gl.clearDepth(1.0);
+            gl.clearColor(0.3,0.3,0.3, 1.0);
+              gl.clearDepth(1.0);
 
-//Enables depth testing
-gl.enable(gl.DEPTH_TEST);
-gl.depthFunc(gl.LESS);
-//Enables blending
-gl.enable(gl.BLEND);
+              //Enables depth testing
+              gl.enable(gl.DEPTH_TEST);
+              gl.depthFunc(gl.LESS);
 
-//Blending function for transparencies
-gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-gl.blendColor(blendingColor[0], blendingColor[1], blendingColor[2], blendingAlpha);
-//Enable culling
-gl.enable(gl.CULL_FACE);
+              //Enables blending
+          	gl.enable(gl.BLEND);
 
- blendingEquation    = gl.FUNC_ADD;
- blendingSource      = gl.SRC_ALPHA;
- blendingTarget      = gl.ONE_MINUS_SRC_ALPHA;
+          	//Blending function for transparencies
+              gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+              gl.blendColor(blendingColor[0], blendingColor[1], blendingColor[2], blendingAlpha);
+              //Enable culling
+              gl.enable(gl.CULL_FACE);
 
-            setupShaders()
-            setupBuffers()
-            draw();					//Draw the triangle
+               blendingEquation    = gl.FUNC_ADD;
+               blendingSource      = gl.SRC_ALPHA;
+               blendingTarget      = gl.ONE_MINUS_SRC_ALPHA;
+
+ setupShaders()
+ setupBuffers()
+draw();
         });
 
         function setupShaders() {
@@ -73,9 +79,7 @@ gl.enable(gl.CULL_FACE);
             gl.uniform1f(shaderProg.uPointSizeLoc, 1.0);		//Store data to the shader's uniform variable uPointSize
             gl.uniform1f(shaderProg.uAlphaLoc, 0.5);
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
-
             gl.useProgram(null);
-
         }
 
         function setupVertices() {
@@ -112,8 +116,6 @@ gl.enable(gl.CULL_FACE);
 
             for (var i = 0; i < indices.length; ++i) {
                 points.push(...vertices[indices[i]]);
-
-                // different color for all faces
                 colors.push(...vertexColors[a]);
               }
         }
@@ -151,7 +153,20 @@ gl.enable(gl.CULL_FACE);
 
         function draw() {
             gl.bindVertexArray(vertexArray);
-            gl.drawArrays(gl.TRIANGLES, 0, 36);
+
+            gl.blendEquation(blendingEquation);
+            gl.blendFunc(blendingSource, blendingTarget);
+            gl.blendColor(blendingColor[0], blendingColor[1], blendingColor[2],blendingAlpha);
+
+              if(showBackFace){
+                  gl.cullFace(gl.FRONT);  //renders the back face
+                  gl.drawArrays(gl.TRIANGLES, 0, 36);
+              }
+              if (showFrontFace){
+                  gl.cullFace(gl.BACK);  //renders the front face
+                  gl.drawArrays(gl.TRIANGLES, 0, 36);
+              }
+
             gl.bindVertexArray(null);
             window.requestAnimationFrame(draw);
         }
@@ -176,6 +191,7 @@ gl.enable(gl.CULL_FACE);
         <input type="checkbox" id="blending-btn" checked='checked'/><label for="blending-btn">Alpha Blending</label>
         <input type="checkbox" id="show-front-btn" checked='checked'/><label for="show-front-btn">Render Front Face</label>
         <input type="checkbox" id="show-back-btn" checked='checked'/><label for="show-back-btn">Render Back Face</label>
+        <input type="checkbox" id="show-depth-btn" checked='checked'/><label for="show-depth-btn">Enable Depth</label>
         </td>
     </tr>
     <tr>
@@ -184,7 +200,20 @@ gl.enable(gl.CULL_FACE);
             <tr>
                 <td>Alpha Value:</td>
                 <td id='slider-alpha-value' width='15%'><b>0.5</b></td>
-                <td width='80%'><div id='slider-alpha'/></td>
+                <td width='40%'><div id='slider-alpha'/></td>
+                <td>Depth Function</td>
+                <td>
+                    <select name='Depth Function' id='selDepthFunction'>
+                        <option value='LESS' selected='selected'>gl.LESS</option>
+                        <option value='NEVER'>gl.NEVER</option>
+                        <option value='EQUAL'>gl.EQUAL</option>
+                        <option value='LEQUAL'>gl.LEQUAL</option>
+                        <option value='GREATER'>gl.GREATER</option>
+                        <option value='NOTEQUAL'>gl.NOTEQUAL</option>
+                        <option value='GEQUAL'>gl.GEQUAL</option>
+                        <option value='ALWAYS'>gl.ALWAYS</option>
+                    </select>
+                </td>
             </tr>
             </table>
         </td>
@@ -289,7 +318,7 @@ updateBlending();
 };
 
 
-$('#blending-btn, #show-front-btn, #show-back-btn').button();
+$('#blending-btn, #show-front-btn, #show-back-btn, #show-depth-btn').button();
 
 
 function updateBlending(){
@@ -304,14 +333,38 @@ function updateBlending(){
     gl.blendColor(blendingColor[0], blendingColor[1], blendingColor[2],blendingAlpha);
 };
 
+function updateDepth(){
+    if (showDepth){
+        gl.enable(gl.DEPTH_TEST);
+    }
+    else{
+        gl.disable(gl.DEPTH_TEST);
+    }
+    gl.depthFunc(depthFunc);
+};
 
 
+$('#show-depth-btn').click(function(){
+    showDepth = $('#show-depth-btn').is(':checked');
+    updateDepth();
+});
+
+$("#selDepthFunction").change(function (event) {
+    depthFunc = gl[event.target.value];
+    updateDepth();
+ });
 
 $('#blending-btn').click(function(){
   blending = $('#blending-btn').is(':checked');
 
-  $('#selBlendEquation, #selSource, #selTarget').attr('disabled',blending?'':'disabled');
+  if(blending){
+  $('#selBlendEquation, #selSource, #selTarget').prop('disabled',false);
   updateBlending();
+  }
+  else{
+    $('#selBlendEquation, #selSource, #selTarget').prop('disabled',true);
+      updateBlending();
+  }
 });
 
 $('#show-front-btn').click(function(){
