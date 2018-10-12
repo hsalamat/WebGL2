@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Culling</title>
@@ -153,10 +153,6 @@ draw();
 
         function draw() {
             gl.bindVertexArray(vertexArray);
-
-            gl.blendEquation(blendingEquation);
-            gl.blendFunc(blendingSource, blendingTarget);
-            gl.blendColor(blendingColor[0], blendingColor[1], blendingColor[2],blendingAlpha);
 
               if(showBackFace){
                   gl.cullFace(gl.FRONT);  //renders the back face
