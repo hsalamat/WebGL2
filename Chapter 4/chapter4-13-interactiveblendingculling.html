@@ -41,8 +41,7 @@
 
 
         window.addEventListener("load", function () {
-            //............................................
-            //Get our extended GL Context Object
+
             gl = GLInstance("myGLCanvas").fSetSize(500, 500);
             //gl.clearColor(0.3,0.3,0.3, 1.0);
             blendingEquation    = gl.FUNC_ADD;
@@ -53,13 +52,13 @@
             //blendingTarget      = gl.DST_COLOR;
 
             //Blending function for transparencies
-              //gl.blendEquation(blendingEquation);
+            gl.blendEquation(blendingEquation);
              gl.blendFunc(blendingSource, blendingTarget);
              gl.enable(gl.BLEND);
             gl.disable(gl.DEPTH_TEST);
             gl.blendColor(blendingColor[0], blendingColor[1], blendingColor[2], blendingAlpha);
               //Enable culling
-              //gl.enable(gl.CULL_FACE);
+              gl.enable(gl.CULL_FACE);
 
  setupShaders()
  setupBuffers()
