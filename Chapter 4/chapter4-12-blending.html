@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>blending</title>
+    <style>
+        html, body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: #404040;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        div {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+
+    <script>
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var vertexBuffer2;
+        var colorBuffer;
+        var colorBuffer2;
+        var shaderProg;
+        var shaderProg2;
+        var vColor;
+        var translations = [];
+        var triangleColors = [];
+
+        var blending            = true,
+        blendingEquation    = undefined,
+        blendingSource      = undefined,
+        blendingTarget      = undefined,
+        blendingColor       = [0.0, 1.0, 0.0],
+        blendingAlpha       = 1.0;
+
+
+        window.addEventListener("load", function () {
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.clearColor(0.3,0.3,0.3, 1.0);
+            //  gl.clearDepth(1.0);
+
+              //Enables depth testing
+              //gl.enable(gl.DEPTH_TEST);
+              //gl.depthFunc(gl.LESS);
+
+              //Enables blending
+
+
+            blendingEquation    = gl.FUNC_ADD;
+
+            blendingSource      = gl.ONE;
+            blendingTarget      = gl.ONE_MINUS_SRC_ALPHA;
+
+            //blendingSource      = gl.SRC_COLOR;
+            //blendingTarget      = gl.DST_COLOR;
+
+            //Blending function for transparencies
+              //gl.blendEquation(blendingEquation);
+             gl.blendFunc(blendingSource, blendingTarget);
+             gl.enable(gl.BLEND);
+            gl.disable(gl.DEPTH_TEST);
+            //gl.blendColor(blendingColor[0], blendingColor[1], blendingColor[2], blendingAlpha);
+              //Enable culling
+              //gl.enable(gl.CULL_FACE);
+
+            setupShaders()
+            setupBuffers()
+            draw();
+        });
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position");
+            shaderProg.vColor = gl.getUniformLocation(shaderProg, "vColorAttr");
+            gl.useProgram(null);
+
+            shaderProg2 = ShaderUtil.domShaderProgram(gl, "vertex_shader2", "fragment_shader2", true);
+            gl.useProgram(shaderProg2);
+            shaderProg2.aPositionLoc = gl.getAttribLocation(shaderProg2, "a_position");
+            shaderProg2.vColor = gl.getAttribLocation(shaderProg2, "vColorAttr");
+            gl.useProgram(null);
+        }
+        function setupCoordinates() {
+            //Dynamiclly create a grid
+            var myVerts = [];
+
+            var verts = [-1.0,0.0,0.0,   1.0,0.0,0.0,
+                        0.0,-1.0,0.0,    0.0, 1.0,0.0,
+                        0.0, 0.0,-1.0,   0.0, 0.0, 1.0]; //x,y,z coordinates 6 vertices
+
+            myVerts = new Float32Array(verts);
+            return myVerts;
+        }
+
+        function setupVertices() {
+            //Dynamiclly create a grid
+            var myVerts = [];
+            var colors = [];
+              colors[0] =[1.0, 0.0, 0.0];
+              colors[1] = [0.0, 1.0, 0.0];
+              colors[2]=  [ 0.0, 0.0, 1.0];
+              colors[3]= [0.0,0.0,0.0];
+
+            var verts = [
+              0.0, 0.5, 0.0,  //v1
+              -0.5, -0.5, 0.0, //v2
+              0.5, -0.5, 0.0  //v3
+            ];
+
+            myVerts = new Float32Array(verts);
+
+            triangleColors.push(...colors[0]);
+            triangleColors.push(...colors[1]);
+            triangleColors.push(...colors[2]);
+            return myVerts;
+        }
+
+        function setupBuffers() {
+            gl.useProgram(shaderProg);
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            var vertices = setupVertices();
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = vertices.length / 3;
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
+            //use the following if you want to pass color per vertex
+            //colorBuffer = gl.createBuffer();
+            //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleColors), gl.STATIC_DRAW);
+            //colorBuffer.itemSize = 3;
+            //colorBuffer.numberOfItems = 6;
+            //gl.enableVertexAttribArray(shaderProg.vColor);
+            //gl.vertexAttribPointer(shaderProg.vColor, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+            gl.useProgram(shaderProg2);
+            vertexArray2 = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray2);
+            vertexBuffer2 = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer2);
+            var vertices = setupCoordinates();
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+            vertexBuffer2.itemSize = 3;
+            vertexBuffer2.numberOfItems = vertices.length / 3;
+            gl.enableVertexAttribArray(shaderProg2.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg2.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+        }
+        function draw() {
+          gl.clearColor(1, 1, 0, 1);
+          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            gl.useProgram(shaderProg2);
+            gl.bindVertexArray(vertexArray2);
+            gl.disableVertexAttribArray(shaderProg2.vColor);
+            gl.vertexAttrib3f(shaderProg2.vColor, 1.0, 0.0, 0.0);
+            gl.drawArrays(gl.LINES, 0, 2);
+            gl.vertexAttrib3f(shaderProg2.vColor, 0, 255, 0);
+            gl.drawArrays(gl.LINES, 2, 2);
+            gl.vertexAttrib3f(shaderProg2.vColor, 0, 0, 255);
+            gl.drawArrays(gl.LINES, 4, 2);
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+
+            gl.useProgram(shaderProg);
+            gl.bindVertexArray(vertexArray);
+
+            gl.uniform4f(shaderProg.vColor, 0.0, 0.0, 1.0, 0.5);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <canvas id="myGLCanvas"></canvas>
+    </div>
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+
+        void main(void){
+        gl_Position = vec4(a_position, 1.0);
+        }
+
+
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision highp float;
+        uniform vec4 vColorAttr;
+        out vec4 finalColor;
+        void main(void) {
+        finalColor = vColorAttr;
+        //finalColor.rgb *= 0.3;
+        }
+    </script>
+    <script id="vertex_shader2" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+        in vec3 vColorAttr;
+        out vec4 vColor;
+
+        void main(void){
+
+        gl_Position = vec4(a_position, 1.0);
+
+        vColor = vec4(vColorAttr, 1.0);
+        }
+
+
+    </script>
+    <script id="fragment_shader2" type="x-shader/x-fragment">#version 300 es
+        precision highp float;
+        in vec4 vColor;
+        out vec4 finalColor;
+        void main(void) {
+        finalColor = vColor;
+        }
+    </script>
+
+</body>
+</html>
