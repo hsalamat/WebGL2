@@ -24,6 +24,7 @@
 
 
     <script>
+        "use strict"
         var gl;
         var vertexArray;
         var vertexBuffer;
@@ -162,9 +163,9 @@
             $("#decreaseZ-btn").button();
             $("#decreaseZ-btn").click(function () { near *= 0.9; far *= 0.9; });
             $("#increaseRadius-btn").button();
-            $("#increaseRadius-btn").click(function () { radiuseye *= 1.1; });
+            $("#increaseRadius-btn").click(function () { radius *= 1.1; });
             $("#decreaseRadius-btn").button();
-            $("#decreaseRadius-btn").click(function () { radiuseye *= 0.9; });
+            $("#decreaseRadius-btn").click(function () { radius *= 0.9; });
             $("#increaseTheta-btn").button();
             $("#increaseTheta-btn").click(function () { theta += dr; });
             $("#decreaseTheta-btn").button();
