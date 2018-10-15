@@ -32,6 +32,7 @@
         var colors = [];
         var vertices = [];
         var vertexColors = [];
+        var slices = 1;
 
         const at = vec3.clone([0.0, 0.0, 0.0]);
         const up = vec3.clone([0.0, 1.0, 0.0]);
@@ -68,7 +69,7 @@
         }
 
         function setupVertices() {
-            var slices = 500;
+            
             var halfLength = 0.5;
             for (var i = 0.0; i <= slices; i += 1) {
 
@@ -157,6 +158,7 @@
         }
 
         function draw() {
+            gl.clear(this.COLOR_BUFFER_BIT | this.DEPTH_BUFFER_BIT);
             gl.bindVertexArray(vertexArray);
 
             let modelViewMatrix = mat4.create();
@@ -195,6 +197,17 @@
             $("#decreasePhi-btn").button();
             $("#decreasePhi-btn").click(function () { phi -= dr; });
 
+            $('#slider-slice').slider({ value: 1.0, min: 1.0, max: 200.00, step: 1.0, slide: updateSlice, change: updateSlice });
+            function updateSlice() {
+                var v = $('#slider-slice').slider("value");
+                $('#slider-slice-value').html('<b>' + v + '</b>');
+                slices = v;
+                vertices = [];
+                vertexColors = [];
+                setupBuffers();
+                draw();
+            };
+
         });
     </script>
 </head>
@@ -211,6 +224,11 @@
         <button id="decreaseTheta-btn">Decrease theta</button>
         <button id="increasePhi-btn">Increase phi</button>
         <button id="decreasePhi-btn">Decrease phi</button>
+        <div>
+        Slices:
+        <div id='slider-slice-value'><b>1</b></div>
+        <div id='slider-slice' />
+    </div>
     </div>
     <canvas id="myGLCanvas"></canvas>
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
