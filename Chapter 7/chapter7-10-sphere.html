@@ -201,8 +201,8 @@
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
             gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
 
-            for (var i = 0; i < index; i += 3)
-            gl.drawArrays(gl.TRIANGLES, i, 3);
+            gl.drawArrays(gl.TRIANGLES, 0, index);
+            //for (var i = 0; i < index; i += 3)
             //gl.drawArrays(gl.LINE_LOOP, i, 3);
 
             gl.bindVertexArray(null);
