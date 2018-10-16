@@ -12,6 +12,7 @@
             border: 1px solid #f00;
             text-shadow: 0px 0px 1px white;
         }
+
     </style>
 
     <script src="Common/js/gl.js"></script>
@@ -20,8 +21,9 @@
     <script src="Common/js/jquery-3.3.1.min.js"></script>
     <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
     <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
-    <link href='Common/css/style.css' type='text/css' rel='stylesheet' />
+    <link href='Common/css/styles.css' type='text/css' rel='stylesheet' />
     <script>
+	"use script"
         var gl;
         var vertexArray;
         var vertexBuffer;
@@ -197,7 +199,7 @@
             $("#decreasePhi-btn").button();
             $("#decreasePhi-btn").click(function () { phi -= dr; });
 
-            $('#slider-slice').slider({ value: 1.0, min: 1.0, max: 200.00, step: 1.0, slide: updateSlice, change: updateSlice });
+            $('#slider-slice').slider({ value: 1.0, min: 1.0, max: 200.00, step: 1.0, slide: updateSlice, change: updateSlice , classes: {"ui-slider": "highlight"} });
             function updateSlice() {
                 var v = $('#slider-slice').slider("value");
                 $('#slider-slice-value').html('<b>' + v + '</b>');
@@ -224,11 +226,12 @@
         <button id="decreaseTheta-btn">Decrease theta</button>
         <button id="increasePhi-btn">Increase phi</button>
         <button id="decreasePhi-btn">Decrease phi</button>
-        <div>
-        Slices:
-        <div id='slider-slice-value'><b>1</b></div>
-        <div id='slider-slice' />
-    </div>
+	 <table style='margin-left:0px'>
+            <tr><td>Slices:</td>
+            <td id='slider-slice-value' width='15%'><b>1.0</b></td>
+            <td width='60%'><div id='slider-slice'/></td>
+            </td></tr>
+        </table>
     </div>
     <canvas id="myGLCanvas"></canvas>
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
