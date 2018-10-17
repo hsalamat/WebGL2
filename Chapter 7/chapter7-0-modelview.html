@@ -188,11 +188,14 @@
             //The required angle of rotation is −35.26 degrees about the y- axis.
             //mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, 0.5]);
             //mat4.rotateX(modelViewMatrix, modelViewMatrix, glMatrix.toRadian(-35.26));
+            
 
             mat4.translate(modelViewMatrix, modelViewMatrix, [0.5, 0.0, 0.0]);
-            mat4.rotateZ(modelViewMatrix, modelViewMatrix, glMatrix.toRadian(45));
+            
             mat4.rotateY(modelViewMatrix, modelViewMatrix, glMatrix.toRadian(32.5));
-
+            mat4.rotateZ(modelViewMatrix, modelViewMatrix, glMatrix.toRadian(45));
+            //
+            //mat4.translate(modelViewMatrix, modelViewMatrix, [0.5, 0.0, 0.0]);
 
             //2.0
             //Suppose that we want to look at the same object from the positive x-axis.
@@ -224,6 +227,16 @@
               gl.useProgram(null);
 
             gl.useProgram(shaderProg2);
+            gl.bindVertexArray(vertexArray2);
+            gl.drawArrays(gl.LINES, 0, 2);
+            gl.vertexAttrib3f(shaderProg2.vColor, 0.0, 1.0, 0.0)
+            gl.drawArrays(gl.LINES, 2, 2);
+            gl.vertexAttrib3f(shaderProg2.vColor, 0.0, 0.0, 1.0)
+            gl.drawArrays(gl.LINES, 4, 2);
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+            gl.useProgram(shaderProg);
             gl.bindVertexArray(vertexArray2);
             gl.drawArrays(gl.LINES, 0, 2);
             gl.vertexAttrib3f(shaderProg2.vColor, 0.0, 1.0, 0.0)
