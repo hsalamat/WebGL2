@@ -1,0 +1,242 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Asynchronous Loading with JSON and AJAX</title>
+    <style>
+        html, body {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: #404040;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        div {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+    <script src="Common/js/jquery-3.3.1.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                url: 'common/models/model1.json',
+                success: function (data) {
+                    $('#model').html('<p> Color: ' + data.color + '</p>');
+                    $('#model').append('<p>Vertices : ' + data.vertices + '</p>');
+                    $('#model').append('<p> Indices: ' + data.indices + '</p>');
+                    model1 = data;
+                }
+            });
+        });
+    </script>
+
+    <script>
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var stripElementBuffer;
+        var shaderProg;
+        var vColor;
+        var model = undefined;
+        var modelLoaded = false;
+        var model1 = [];
+
+        window.addEventListener("load", function () {
+            //............................................
+            //Get our extended GL Context Object
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            gl.enable(gl.DEPTH_TEST);
+            setupShaders();
+            //loadModel('Common/models/model1.json');
+            //the following three lines are equivalent to loadModel to resolve cross origin
+            //setupVertices();
+            validateload2();
+            //setupBuffers();
+            //draw();
+        });
+
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);				//Activate the Shader
+            //Get Location of Uniforms and Attributes.
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position"),
+                shaderProg.uPointSizeLoc = gl.getUniformLocation(shaderProg, "uPointSize");
+            shaderProg.uColor = gl.getUniformLocation(shaderProg, "uColor");
+
+            gl.useProgram(null);
+
+        }
+
+        function setupVertices() {
+            model = {
+                "color": [0.2, 0.8, 0.7],
+                "vertices": [
+                    -0.3,
+                    0.6,
+                    0.0,
+                    -0.4,
+                    0.8,
+                    0.0,
+                    -0.6,
+                    0.8,
+                    0.0,
+                    -0.7,
+                    0.6,
+                    0.0,
+                    -0.6,
+                    0.4,
+                    0.0,
+                    -0.4,
+                    0.4,
+                    0.0
+                ],
+                "indices":
+                    [0, 1, 2, 3, 4, 5, 0, 2, 4, 0, 1, 3, 5, 1, 2, 5, 4, 1, 0, 3]
+            };
+        }
+
+
+        function setupBuffers() {
+
+            gl.useProgram(shaderProg);
+
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(model.vertices), gl.STATIC_DRAW);
+
+
+            stripElementBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, stripElementBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(model.indices), gl.STATIC_DRAW);
+
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+            gl.uniform3f(shaderProg.uColor, model.color[0], model.color[1], model.color[2]);
+            gl.bindVertexArray(null);
+        }
+
+        function draw() {
+            gl.bindVertexArray(vertexArray);
+            gl.drawElements(gl.LINE_STRIP, model.indices.length, gl.UNSIGNED_SHORT, 0);
+            gl.bindVertexArray(null);
+        }
+
+        /**
+       * Creates an AJAX request to load a model asynchronously
+       A new XMLHttpRequest object starts in state 0
+       When you successfully call .open() on the obect, the status changes to 1
+       When you successfully call .send() on the object, an HTTP request goes off to the server defined in .open(). Once the HTTP response headers have been received and processed the status changes to 2
+       Eventually, the actual content of the request will start coming in. When this begins, the status changes to 3
+       Finally, once all of the content is downloaded and is ready to be used, the status changes to 4
+       */
+        function loadModel(filename) {
+            var request = new XMLHttpRequest();
+            //var resource = "http://" + document.domain + filename
+            var resource = 'Common/models/model1.json';
+            request.open("GET", filename);
+            request.onreadystatechange = function () {
+                console.info(request.readyState + ' - ' + request.status);
+                if (request.readyState == 4) {
+                    if (request.status == 200) { //OK
+                        handleLoadedModel(filename, JSON.parse(request.responseText));
+                    }
+                    else if (document.domain.length == 0 && request.status == 0) { //OK but local, no web server
+                        handleLoadedModel(filename, JSON.parse(request.responseText));
+                    }
+                    else {
+                        alert('There was a problem loading the file :' + filename);
+                        alert('HTML error code: ' + request.status);
+                    }
+                }
+            }
+            request.send();
+        }
+
+        /**
+        * Creates the buffers that contain the geometry of the model
+        */
+        function handleLoadedModel(filename, payload) {
+
+            model = payload; //save our model in a global variable so we can retrieve it in draw()
+
+            alert(filename + ' has been retrieved from the server');
+            //alert("vertices:" + model.vertices);
+
+            modelLoaded = true;
+            validateload();
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function validateload() {
+            console.log('Taking a break...');
+            await sleep(2000);
+            if (model.vertices.length < 1) validateload(); //make sure the model is loaded
+            else {
+                setupBuffers();
+                draw();
+            }
+            console.log('Two second later');
+        }
+
+        async function validateload2() {
+            console.log('Taking a break...');
+            await sleep(2000);
+            if (model1.vertices.length < 1) validateload2(); //make sure the model is loaded
+            else {
+                model = model1;
+                setupBuffers();
+                draw();
+            }
+            console.log('Two second later');
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <canvas id="myGLCanvas"></canvas>
+    </div>
+    <div id="model" style="background-color:gray;">
+        Model
+    </div>
+    <input type="button" id="driver" value="Load Data" />
+
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec3 a_position;
+
+        void main(void){
+        gl_Position = vec4(a_position, 1.0);
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        uniform vec3 uColor;
+        out vec4 finalColor;
+
+        void main(void) {
+        finalColor = vec4(uColor, 1.0);
+        }
+    </script>
+
+</body>
+</html>
