@@ -1,0 +1,28 @@
+﻿<html>
+<head>
+    <script type="text/javascript" src="jquery-3.3.1.min.js"></script>
+    <script>$(document).ready(function() {
+    $("#driver").click(function (event) {
+        $.ajax({
+            url: 'cone.json',
+            success: function (data) {
+                     $('#model').html('<p> Color: ' + data.color + '</p>');
+                     $('#model').append('<p>Vertices : ' + data.vertices + '</p>');
+                     $('#model').append('<p> Indices: ' + data.indices + '</p>');
+            }
+        });
+
+        });
+    });
+</script>
+</head>
+<body>
+    <p>Click on the button to load your model</p>
+
+    <div id="model" style="background-color:blue;">
+        Model
+    </div>
+
+    <input type="button" id="driver" value="Load Data" />
+</body>
+</html>
