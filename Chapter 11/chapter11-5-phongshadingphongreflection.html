@@ -426,32 +426,50 @@
         uniform mat4 modelViewMatrix;
         uniform mat4 projectionMatrix;
 
-        uniform vec4 lightDiffuse;
-        uniform vec4 materialDiffuse;
-        uniform vec4 lightAmbient;
-        uniform vec4 materialAmbient;
-        uniform vec4 lightSpecular;
-        uniform vec4 materialSpecular;
         uniform vec4 lightPosition;
         uniform mat4 normalMatrix;
-        uniform float shininess;
 
+        out vec3 L;
+        out vec3 N;
+        out vec3 E;
 
         void main(void){
         // pos is vertex position in eye coordinates
         vec3 pos = (modelViewMatrix * vPositionAttr).xyz;
 
         //Transformed normal position
-        vec3 N = normalize(vec3(normalMatrix * vNormalAttr));
+        N = normalize(vec3(normalMatrix * vNormalAttr));
 
-        //Normalize light to calculate lambertTerm
-        vec3 L;
+        vec3 eyeVec = -vec3(pos);
+        E = normalize(eyeVec);
 
         // check for directional light
 
         if(lightPosition.w == 0.0) L = normalize(lightPosition.xyz);
         else L = normalize( lightPosition.xyz - pos );
 
+        gl_Position = projectionMatrix * modelViewMatrix * vPositionAttr;
+
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        in vec4 vColor;
+        out vec4 finalColor;
+
+        uniform vec4 lightDiffuse;
+        uniform vec4 materialDiffuse;
+        uniform vec4 lightAmbient;
+        uniform vec4 materialAmbient;
+        uniform vec4 lightSpecular;
+        uniform vec4 materialSpecular;
+        uniform float shininess;
+
+        in vec3 L;
+        in vec3 N;
+        in vec3 E;
+
+        void main(void) {
         //Lambert's cosine law
         float lambertTerm = dot(N,-L);
 
@@ -469,30 +487,16 @@
         {
         Id = lightDiffuse* materialDiffuse * lambertTerm; //add diffuse term
 
-        vec3 eyeVec = -vec3(pos);
-        vec3 E = normalize(eyeVec);
         vec3 R = reflect(L, N);
         float specular = pow(max(dot(R, E), 0.0), shininess );
 
         Is = lightSpecular * materialSpecular * specular; //add specular term
         }
 
-
         //Final color
-        vColor = Ia + Id + Is;
-        vColor.a = 1.0;
+        finalColor = Ia + Id + Is;
+        finalColor.a = 1.0;
 
-        gl_Position = projectionMatrix * modelViewMatrix * vPositionAttr;
-
-        }
-    </script>
-    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
-        precision mediump float;
-        in vec4 vColor;
-        out vec4 finalColor;
-
-        void main(void) {
-        finalColor = vColor;
         }
     </script>
 
