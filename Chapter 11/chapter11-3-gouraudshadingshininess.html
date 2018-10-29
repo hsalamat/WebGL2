@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title> Gouraud Shading + Lambertian Reflection Model</title>
+    <title> Gouraud shading plus shininess</title>
     <style>
         #overlay {
             background-color: rgba(0, 0, 0, 0.7);
@@ -40,13 +40,19 @@
         var normalsArray = [];
         var index = 0;
         var numTimesToSubdivide = 4;
+        var sphereColor = [1.0,1.0, 0.0, 1.0];
 
-        //var lightDirection = [0.0,-1.0, -1.0];
-        var lightPosition = [0.0, -1.0, -1.0, 0.0];
+        var lightPosition = [1.0, 1.0, 1.0, 0.0];
+        var lightAmbient = [0.2, 0.2, 0.2, 1.0];
         var lightDiffuse = [1.0, 1.0, 1.0, 1.0];
-        var materialDiffuse = [0.5,0.8,0.1,1.0];
+        var lightSpecular = [1.0, 1.0, 1.0, 1.0];
 
-        var  diffuseColor;
+        var materialAmbient = [1.0, 0.0, 1.0, 1.0];
+        var materialDiffuse = [1.0, 0.8, 0.0, 1.0];
+        var materialSpecular = [1.0, 1.0, 1.0, 1.0];
+        var materialShininess = 20.0;
+
+        var ambientColor, diffuseColor, specularColor;
 
 
         const at = vec3.clone([0.0, 0.0, 0.0]);
@@ -82,9 +88,6 @@
             shaderProg.normalMatrixLoc = gl.getUniformLocation(shaderProg, "normalMatrix");
             shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
             shaderProg.vNormal = gl.getAttribLocation(shaderProg, "vNormalAttr");
-            shaderProg.lightPosition = gl.getUniformLocation(shaderProg, "lightPosition");
-            shaderProg.materialDiffuse = gl.getUniformLocation(shaderProg, "materialDiffuse");
-            shaderProg.lightDiffuse = gl.getUniformLocation(shaderProg, "lightDiffuse");
             gl.useProgram(null);
 
         }
@@ -93,32 +96,17 @@
           vertices = vertices.concat(a);
           vertices = vertices.concat(b);
           vertices = vertices.concat(c);
-
-          let aVertice = vec3.clone(a);
-          let bVertice = vec3.clone(b);
-          let cVertice = vec3.clone(c);
-
-          let aVector = vec3.create();
-          let bVector = vec3.create();
-          let normalVector= vec3.create();
-          let normalVector4= vec4.create();
-
-          vec3.subtract(aVector, c, a);
-          vec3.subtract(bVector, b, a);
-          vec3.cross(normalVector, aVector, bVector);
-          vec3.normalize(normalVector, normalVector);
-          vec4.set(normalVector4,normalVector[0],normalVector[1], normalVector[2],0.0);
-
-          normalsArray.push(...normalVector4);
-          normalsArray.push(...normalVector4);
-          normalsArray.push(...normalVector4);
-
           index += 3;
 
-          // Replace the true vertex normals with the following
-          //normalsArray = normalsArray.concat(a);
-          //normalsArray = normalsArray.concat(b);
-          //normalsArray = normalsArray.concat(c);
+          //vertexColors = vertexColors.concat(sphereColor);
+          //vertexColors = vertexColors.concat(sphereColor);
+          //vertexColors = vertexColors.concat(sphereColor);
+
+          normalsArray = normalsArray.concat(a);
+          normalsArray = normalsArray.concat(b);
+          normalsArray = normalsArray.concat(c);
+
+
         }
 
 
@@ -194,6 +182,7 @@
             vertexBuffer.itemSize = 3;
             vertexBuffer.numberOfItems = vertices.length / 3;
 
+            //colorBuffer = gl.createBuffer();
             normalBuffer = gl.createBuffer();
 
             gl.useProgram(shaderProg);
@@ -205,6 +194,10 @@
             gl.enableVertexAttribArray(shaderProg.aPositionLoc);
             gl.vertexAttribPointer(shaderProg.aPositionLoc, 4, gl.FLOAT, false, 0, 0);
 
+            //gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColors), gl.STATIC_DRAW);
+            //gl.enableVertexAttribArray(shaderProg.vColor);
+            //gl.vertexAttribPointer(shaderProg.vColor, 4, gl.FLOAT, false, 0, 0);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalsArray), gl.STATIC_DRAW);
@@ -217,9 +210,18 @@
 
         function setupLights() {
             gl.useProgram(shaderProg);
-            gl.uniform4fv(shaderProg.lightDiffuse, lightDiffuse);
-            gl.uniform4fv(shaderProg.materialDiffuse,   materialDiffuse);
-            gl.uniform4fv(shaderProg.lightPosition, lightPosition);
+            var ambientProduct = vec4.create();
+            vec4.multiply(ambientProduct, lightAmbient, materialAmbient);
+            var diffuseProduct = vec4.create();
+            vec4.multiply(diffuseProduct, lightDiffuse, materialDiffuse);
+            var specularProduct = vec4.create();
+            vec4.multiply(specularProduct, lightSpecular, materialSpecular);
+
+            gl.uniform4fv(gl.getUniformLocation(shaderProg, "ambientProduct"), new Float32Array(ambientProduct));
+            gl.uniform4fv(gl.getUniformLocation(shaderProg, "diffuseProduct"), new Float32Array(diffuseProduct));
+            gl.uniform4fv(gl.getUniformLocation(shaderProg, "specularProduct"), new Float32Array(specularProduct));
+            gl.uniform4fv(gl.getUniformLocation(shaderProg, "lightPosition"), new Float32Array(lightPosition));
+            gl.uniform1f(gl.getUniformLocation(shaderProg, "shininess"), materialShininess);
         }
 
         function draw() {
@@ -233,11 +235,16 @@
 
             let modelViewMatrix = mat4.create();
             let projectionMatrix = mat4.create();
-            let normalMatrix = mat4.create();
+            let normalMatrix = mat3.create();
 
             let eye = vec3.clone([radiuseye * Math.sin(phi), radiuseye * Math.sin(theta),
             radiuseye * Math.cos(phi)]);
 
+            //eye = [
+            //  radius * Math.sin(theta) * Math.cos(phi),
+            //  radius * Math.sin(theta) * Math.sin(phi),
+            //  radius * Math.cos(theta)
+            //];
 
             mat4.lookAt(modelViewMatrix, eye, at, up);
             mat4.ortho(projectionMatrix, left, right, bottom, ytop, near, far);
@@ -246,12 +253,15 @@
             // it's here for generality but since there is
             // no scaling in this example we could just use modelView matrix in shaders
 
-            mat4.invert(normalMatrix,modelViewMatrix);
-            //mat4.clone(normalMatrix,modelViewMatrix);
+            normalMatrix = [
+                modelViewMatrix[0], modelViewMatrix[1], modelViewMatrix[2],
+                modelViewMatrix[4], modelViewMatrix[5], modelViewMatrix[6],
+                modelViewMatrix[8], modelViewMatrix[9], modelViewMatrix[10]
+            ];
 
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
             gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
-            gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
+            gl.uniformMatrix3fv(shaderProg.normalMatrixLoc, false, normalMatrix);
 
 
             gl.drawArrays(gl.TRIANGLES, 0, index);
@@ -300,64 +310,49 @@
             $("#decreasePhi-btn").button();
             $("#decreasePhi-btn").click(function () { phi -= dr; draw();});
 
-  $('#colorSelectorSphere').ColorPicker({
-      onSubmit: function(hsb, hex, rgb, el) {
-     $(el).val(hex);
-     $(el).ColorPickerHide();
+            $('#colorSelectorBg').ColorPicker({
+                onSubmit: function (hsb, hex, rgb, el) {
+                    $(el).val(hex);
+                    $(el).ColorPickerHide();
 
-   },
-   color: '#00ff00',
-      onShow: function (colpkr) {
-          $(colpkr).fadeIn(500);
-          return false;
-      },
-      onHide: function (colpkr) {
-          $(colpkr).fadeOut(500);
-          return false;
-      },
-      onChange: function (hsb, hex, rgb) {
-          $('#colorSelectorSphere div').css('backgroundColor', '#' + hex);
-          updateObjectColor(rgb.r/256,rgb.g/256,rgb.b/256);
-      },
+                },
+                color: '#00ff00',
+                onShow: function (colpkr) {
+                    $(colpkr).fadeIn(500);
+                    return false;
+                },
+                onHide: function (colpkr) {
+                    $(colpkr).fadeOut(500);
+                    return false;
+                },
+                onChange: function (hsb, hex, rgb) {
+                    $('#colorSelectorBg div').css('backgroundColor', '#' + hex);
+                    updateClearColor(rgb.r / 256, rgb.g / 256, rgb.b / 256);
+                },
 
-      onBeforeShow: function (colpkr) {
-     $(colpkr).ColorPickerSetColor('rgb(0.5,0.8,0.1)');
-    }
-   })
-
-              $('#slider-x').slider({value:0.0, min:-1.01, max:1.01, step:0.01, slide:updateLightDirection});
-              $('#slider-y').slider({value:-1.0, min:-1.01, max:1.01, step:0.01, slide:updateLightDirection});
-              $('#slider-z').slider({value:-1.0, min:-1.01, max:1.01, step:0.01, slide:updateLightDirection});
-              $('#slider-ld').slider({value:1.0, min:-0.01, max:1.01, step:0.01, slide:updateLightDiffuseTerm});
+                onBeforeShow: function (colpkr) {
+                    $(this).ColorPickerSetColor('rgb(0.5,0.8,0.1)');
+                }
+            })
 
         });
 
-        function updateObjectColor(r,g,b){
-  gl.uniform4fv(shaderProg.materialDiffuse,[r,g,b,1.0]);
-}
+        function updateClearColor(r, g, b) {
+            materialAmbient = [r, g, b, 1.0];
+            index = 0;
+            normalsArray = [];
+            vertices = [];
+            setupLights();
+            setupBuffers();
+            draw();
+        }
 
-        function updateLightDirection(){
-var x = $('#slider-x').slider("value");
-var y = $('#slider-y').slider("value");
-var z = $('#slider-z').slider("value");
-gl.uniform4fv(shaderProg.lightPosition, [x,y,z,0.0]);
-
-$('#slider-x-value').html(x);
-$('#slider-y-value').html(y);
-$('#slider-z-value').html(z);
-}
-
-function updateLightDiffuseTerm(){
- var ld = $('#slider-ld').slider("value");
- gl.uniform4fv(shaderProg.lightDiffuse,[ld,ld,ld,1.0]);
- $('#slider-ld-value').html(ld);
-}
 
     </script>
 </head>
 <body>
     <div id="overlay">
-        Gouraud Shading + Lambertian Reflection Model
+        Gouraud Shading - shaded sphere using true normals and per vertex shading
         <p />
         <button id="increaseSubdivision-btn">Increase Subdivisions</button>
         <button id="decreaseSubdivision-btn">Decrease Subdivisions</button>
@@ -371,31 +366,11 @@ function updateLightDiffuseTerm(){
         <button id="increasePhi-btn">Increase phi</button>
         <button id="decreasePhi-btn">Decrease phi</button>
         <p></p>
-        <table>
-          Light Direction:
 
-             <td>X:</td><td id='slider-x-value' width='30px' align='center'>0.0</td><td width='150px'><div id='slider-x'/></td>
-            </tr>
-            <tr>
-             <td>Y:</td> <td id='slider-y-value'  width='30px' align='center'>-1.0</td><td width='150px'><div id='slider-y'/></td>
-            </tr>
-            <tr>
-             <td>Z:</td> <td id='slider-z-value'  width='30px' align='center'>-1.0</td><td width='150px'><div id='slider-z'/></td>
-            </tr>
-          <tr>
-                    <td colspan="2"> Sphere Color (Material Diffuse Term:</td>
-                    <td>
-                         <div id='colorSelectorSphere' class='colorSelector'><div style='background-color:rgb(128,204,26)'></div></div>
-                    </td>
-
-                <td align='right'>Light Diffuse Term:</td>
-                <td id='slider-ld-value'  width='30px'>1.0</td>
-                <td width='150px' colspan='3'><div id='slider-ld'/></td>
-            </tr>
-            <tr>
-
-
- </table>
+        material Ambient:
+                <div id='colorSelectorBg' class='colorSelector'>
+                    <div style='background-color:rgb(77,77,77)'></div>
+                </div>
     </div>
     <canvas id="myGLCanvas"></canvas>
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
@@ -406,20 +381,19 @@ function updateLightDiffuseTerm(){
         uniform mat4 modelViewMatrix;
         uniform mat4 projectionMatrix;
 
-        uniform vec4 lightDiffuse;
-        uniform vec4 materialDiffuse;
+        uniform vec4 ambientProduct, diffuseProduct, specularProduct;
         uniform vec4 lightPosition;
-        uniform mat4 normalMatrix;
+        uniform float shininess;
+        uniform mat3 normalMatrix;
 
 
         void main(void){
           // pos is vertex position in eye coordinates
+
           vec3 pos = (modelViewMatrix * vPositionAttr).xyz;
 
-          //Transformed normal position
-          vec3 N = normalize(vec3(normalMatrix * vNormalAttr));
+          // vector from vertex position to light source
 
-          //Normalize light to calculate lambertTerm
           vec3 L;
 
           // check for directional light
@@ -427,17 +401,38 @@ function updateLightDiffuseTerm(){
           if(lightPosition.w == 0.0) L = normalize(lightPosition.xyz);
           else L = normalize( lightPosition.xyz - pos );
 
-          //Lambert's cosine law
-          float lambertTerm = dot(N,-L);
+          // Because the eye point the is at the orgin
+          // the vector from the vertex position to the eye is
 
-          //Final Color
-          vec4 Id = materialDiffuse * lightDiffuse * lambertTerm;
-          vColor = Id;
-          vColor.a = 1.0;
+          vec3 E = -normalize( pos );
 
+          // halfway vector
+
+          vec3 H = normalize( L + E );
+
+          // Transform vertex normal into eye coordinates
+
+          vec3 N = normalize( normalMatrix*vNormalAttr.xyz);
+
+
+          // Compute terms in the illumination equation
+          vec4 ambient = ambientProduct;
+
+          float Kd = max( dot(L, N), 0.0 );
+          vec4  diffuse = Kd*diffuseProduct;
+
+          float Ks = pow( max(dot(N, H), 0.0), shininess );
+          vec4  specular = Ks * specularProduct;
+
+          if( dot(L, N) < 0.0 ) {
+          specular = vec4(0.0, 0.0, 0.0, 1.0);
+          }
 
           gl_Position = projectionMatrix * modelViewMatrix * vPositionAttr;
 
+          vColor = ambient + diffuse +specular;
+
+          vColor.a = 1.0;
         }
     </script>
     <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
