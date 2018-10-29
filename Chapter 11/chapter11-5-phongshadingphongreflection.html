@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title> Gouraud smooth Shading + Lambertian Reflection Model</title>
+    <title> Phong Shading + Lambertian Reflection Model</title>
     <style>
         #overlay {
             background-color: rgba(0, 0, 0, 0.7);
@@ -374,7 +374,7 @@
 </head>
 <body>
     <div id="overlay">
-        Gouraud Smooth Shading + phong Reflection Model
+        Phong Shading + phong Reflection Model
         <p />
         <button id="increaseSubdivision-btn">Increase Subdivisions</button>
         <button id="decreaseSubdivision-btn">Decrease Subdivisions</button>
@@ -493,12 +493,9 @@
         Is = lightSpecular * materialSpecular * specular; //add specular term
         }
 
-        //Final color
         finalColor = Ia + Id + Is;
         finalColor.a = 1.0;
-
         }
     </script>
-
 </body>
 </html>
