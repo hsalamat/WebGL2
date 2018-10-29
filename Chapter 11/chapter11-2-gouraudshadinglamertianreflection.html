@@ -429,9 +429,12 @@ function updateLightDiffuseTerm(){
 
           //Lambert's cosine law
           float lambertTerm = dot(N,-L);
+          
+          float Kd = max (dot (N, -L) , 0.0);
+          
 
           //Final Color
-          vec4 Id = materialDiffuse * lightDiffuse * lambertTerm;
+          vec4 Id = materialDiffuse * lightDiffuse * Kd;
           vColor = Id;
           vColor.a = 1.0;
 
