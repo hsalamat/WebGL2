@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Phong Shading + Phong Reflection Model using halfway vector</title>
+    <style>
+        #overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-family: monospace;
+            padding: 1em;
+            border-radius: 1em;
+            border: 1px solid #f00;
+            text-shadow: 0px 0px 1px white;
+        }
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+    <script src="Common/js/jquery-3.3.1.min.js"></script>
+    <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
+    <script type='text/javascript' src='Common/js/colorpicker.js'></script>
+    <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
+    <link href='Common/css/style.css' type='text/css' rel='stylesheet' />
+    <link href='Common/css/colorpicker.css' type='text/css' rel='stylesheet' />
+
+    <script>
+        "use strict"
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var colorBuffer;
+        var normalBuffer;
+        var shaderProg;
+        var vColor;
+        var points = [];
+        var colors = [];
+        var vertices = [];
+        var vertexColors = [];
+        var normalsArray = [];
+        var index = 0;
+        var numTimesToSubdivide = 4;
+
+        //var lightDirection = [0.0,-1.0, -1.0];
+        var lightPosition = [0.0, -1.0, -1.0, 0.0];
+        var lightAmbient = [0.2, 0.2, 0.2, 1.0];
+        var lightDiffuse = [1.0, 1.0, 1.0, 1.0];
+        var lightSpecular = [1.0, 1.0, 1.0, 1.0];
+
+        var materialAmbient = [1.0, 0.0, 1.0, 1.0];
+        var materialDiffuse = [1.0, 0.8, 0.0, 1.0];
+        var materialSpecular = [1.0, 1.0, 1.0, 1.0];
+        var materialShininess = 20.0;
+
+        var diffuseColor;
+
+
+        const at = vec3.clone([0.0, 0.0, 0.0]);
+        const up = vec3.clone([0.0, 1.0, 0.0]);
+        var near = -10;
+        var far = 10;
+        var radius = 6.0;
+        var radiuseye = 1.5;
+        var theta = 0.0;
+        var phi = 0.0;
+        var dr = 5.0 * Math.PI / 180.0;
+
+        var left = -3.0;
+        var right = 3.0;
+        var ytop = 3.0;
+        var bottom = -3.0;
+
+        window.addEventListener("load", function () {
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            gl.enable(gl.DEPTH_TEST);
+            setupShaders();
+            setupLights();
+            setupBuffers();
+            draw();
+        });
+
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "vPositionAttr");
+            shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
+            shaderProg.projectionMatrixLoc = gl.getUniformLocation(shaderProg, "projectionMatrix");
+            shaderProg.normalMatrixLoc = gl.getUniformLocation(shaderProg, "normalMatrix");
+            shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
+            shaderProg.vNormal = gl.getAttribLocation(shaderProg, "vNormalAttr");
+            shaderProg.lightPosition = gl.getUniformLocation(shaderProg, "lightPosition");
+            shaderProg.materialDiffuse = gl.getUniformLocation(shaderProg, "materialDiffuse");
+            shaderProg.lightDiffuse = gl.getUniformLocation(shaderProg, "lightDiffuse");
+            shaderProg.materialAmbient = gl.getUniformLocation(shaderProg, "materialAmbient");
+            shaderProg.lightAmbient = gl.getUniformLocation(shaderProg, "lightAmbient");
+            shaderProg.materialSpecular = gl.getUniformLocation(shaderProg, "materialSpecular");
+            shaderProg.lightSpecular = gl.getUniformLocation(shaderProg, "lightSpecular");
+            shaderProg.shininess = gl.getUniformLocation(shaderProg, "shininess");
+            gl.useProgram(null);
+
+        }
+
+        function triangle(a, b, c) {
+            vertices = vertices.concat(a);
+            vertices = vertices.concat(b);
+            vertices = vertices.concat(c);
+
+            //let aVertice = vec3.clone(a);
+            //let bVertice = vec3.clone(b);
+            //let cVertice = vec3.clone(c);
+
+            //let aVector = vec3.create();
+            //let bVector = vec3.create();
+            //let normalVector= vec3.create();
+            //let normalVector4= vec4.create();
+
+            //vec3.subtract(aVector, c, a);
+            //vec3.subtract(bVector, b, a);
+            //vec3.cross(normalVector, aVector, bVector);
+            //vec3.normalize(normalVector, normalVector);
+            //vec4.set(normalVector4,normalVector[0],normalVector[1], normalVector[2],0.0);
+
+            //normalsArray.push(...normalVector4);
+            //normalsArray.push(...normalVector4);
+            //normalsArray.push(...normalVector4);
+
+            normalsArray = normalsArray.concat(a);
+            normalsArray = normalsArray.concat(b);
+            normalsArray = normalsArray.concat(c);
+
+            index += 3;
+
+
+        }
+
+
+        function divideTriangle(a, b, c, count) {
+            if (count > 0) {
+
+                var ab = [0, 0, 0, 1];
+                var ac = [0, 0, 0, 1];
+                var bc = [0, 0, 0, 1];
+                normalize(ab, mix(a, b, 0.5));
+                normalize(ac, mix(a, c, 0.5));
+                normalize(bc, mix(b, c, 0.5));
+
+                divideTriangle(a, ab, ac, count - 1);
+                divideTriangle(ab, b, bc, count - 1);
+                divideTriangle(bc, c, ac, count - 1);
+                divideTriangle(ab, bc, ac, count - 1);
+            }
+            else { // draw tetrahedron at end of recursion
+                triangle(a, b, c);
+            }
+        }
+
+        function tetrahedron(a, b, c, d, n) {
+            divideTriangle(a, b, c, n);
+            divideTriangle(d, c, b, n);
+            divideTriangle(a, d, b, n);
+            divideTriangle(a, c, d, n);
+        }
+
+        function mix(u, v, s) {
+            var result = [];
+            for (var i = 0; i < u.length; ++i) {
+                result.push((1.0 - s) * u[i] + s * v[i]);
+            }
+
+            return result;
+        }
+
+        function normalize(out, a) {
+            var x = a[0];
+            var y = a[1];
+            var z = a[2];
+            var len = x * x + y * y + z * z;
+            if (len > 0) {
+                len = 1 / Math.sqrt(len);
+                out[0] = a[0] * len;
+                out[1] = a[1] * len;
+                out[2] = a[2] * len;
+                out[3] = 1;
+            }
+            return out;
+        }
+
+
+        function setupVertices() {
+
+            var va = [0.0, 0.0, -1.0, 1.0];
+            var vb = [0.0, 0.942809, 0.333333, 1.0];
+            var vc = [-0.816497, -0.471405, 0.333333, 1.0];
+            var vd = [0.816497, -0.471405, 0.333333, 1.0];
+
+            tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
+
+        }
+
+
+        function setupBuffers() {
+
+            vertexBuffer = gl.createBuffer();
+            setupVertices();
+
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = vertices.length / 3;
+
+            normalBuffer = gl.createBuffer();
+
+            gl.useProgram(shaderProg);
+
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 4, gl.FLOAT, false, 0, 0);
+
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalsArray), gl.STATIC_DRAW);
+            gl.enableVertexAttribArray(shaderProg.vNormal);
+            gl.vertexAttribPointer(shaderProg.vNormal, 4, gl.FLOAT, false, 0, 0);
+
+            gl.bindVertexArray(null);
+        }
+
+
+        function setupLights() {
+            gl.useProgram(shaderProg);
+            gl.uniform4fv(shaderProg.lightDiffuse, lightDiffuse);
+            gl.uniform4fv(shaderProg.materialDiffuse, materialDiffuse);
+            gl.uniform4fv(shaderProg.lightAmbient, lightAmbient);
+            gl.uniform4fv(shaderProg.materialAmbient, materialAmbient);
+            gl.uniform4fv(shaderProg.lightSpecular, lightSpecular);
+            gl.uniform4fv(shaderProg.materialSpecular, materialSpecular);
+            gl.uniform4fv(shaderProg.lightPosition, lightPosition);
+            gl.uniform1f(shaderProg.shininess, materialShininess);
+        }
+
+        function draw() {
+            gl.clearDepth(100.0);
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            gl.bindVertexArray(vertexArray);
+
+            let modelViewMatrix = mat4.create();
+            let projectionMatrix = mat4.create();
+            let normalMatrix = mat4.create();
+
+            let eye = vec3.clone([radiuseye * Math.sin(phi), radiuseye * Math.sin(theta),
+            radiuseye * Math.cos(phi)]);
+
+
+            mat4.lookAt(modelViewMatrix, eye, at, up);
+            mat4.ortho(projectionMatrix, left, right, bottom, ytop, near, far);
+
+            // normal matrix only really need if there is nonuniform scaling
+            // it's here for generality but since there is
+            // no scaling in this example we could just use modelView matrix in shaders
+
+            mat4.invert(normalMatrix, modelViewMatrix);
+            //mat4.clone(normalMatrix,modelViewMatrix);
+
+            gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+            gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
+            gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
+
+
+            gl.drawArrays(gl.TRIANGLES, 0, index);
+
+            //for (var i = 0; i < index; i += 3)
+            //gl.drawArrays(gl.LINE_LOOP, i, 3);
+
+            gl.bindVertexArray(null);
+            window.requestAnimationFrame(draw);
+        }
+    </script>
+    <script>
+        $(function () {
+            $("#increaseSubdivision-btn").button();
+            $("#increaseSubdivision-btn").click(function () {
+                numTimesToSubdivide++;
+                index = 0;
+                vertices = [];
+                normalsArray = [];
+                setupBuffers();
+                draw();
+            });
+            $("#decreaseSubdivision-btn").button();
+            $("#decreaseSubdivision-btn").click(function () {
+                numTimesToSubdivide--;
+                index = 0;
+                vertices = [];
+                normalsArray = [];
+                setupBuffers();
+                draw();
+            });
+            $("#increaseZ-btn").button();
+            $("#increaseZ-btn").click(function () { near *= 1.1; far *= 1.1; draw(); });
+            $("#decreaseZ-btn").button();
+            $("#decreaseZ-btn").click(function () { near *= 0.9; far *= 0.9; draw(); });
+            $("#increaseRadius-btn").button();
+            $("#increaseRadius-btn").click(function () { radiuseye *= 1.1; draw(); });
+            $("#decreaseRadius-btn").button();
+            $("#decreaseRadius-btn").click(function () { radiuseye *= 0.9; draw(); });
+            $("#increaseTheta-btn").button();
+            $("#increaseTheta-btn").click(function () { theta += dr; draw(); });
+            $("#decreaseTheta-btn").button();
+            $("#decreaseTheta-btn").click(function () { theta -= dr; draw(); });
+            $("#increasePhi-btn").button();
+            $("#increasePhi-btn").click(function () { phi += dr; draw(); });
+            $("#decreasePhi-btn").button();
+            $("#decreasePhi-btn").click(function () { phi -= dr; draw(); });
+
+            $('#colorSelectorSphere').ColorPicker({
+                onSubmit: function (hsb, hex, rgb, el) {
+                    $(el).val(hex);
+                    $(el).ColorPickerHide();
+
+                },
+                color: '#00ff00',
+                onShow: function (colpkr) {
+                    $(colpkr).fadeIn(500);
+                    return false;
+                },
+                onHide: function (colpkr) {
+                    $(colpkr).fadeOut(500);
+                    return false;
+                },
+                onChange: function (hsb, hex, rgb) {
+                    $('#colorSelectorSphere div').css('backgroundColor', '#' + hex);
+                    updateObjectColor(rgb.r / 256, rgb.g / 256, rgb.b / 256);
+                },
+
+                onBeforeShow: function (colpkr) {
+                    $(colpkr).ColorPickerSetColor('rgb(0.5,0.8,0.1)');
+                }
+            })
+
+            $('#slider-x').slider({ value: 0.0, min: -1.01, max: 1.01, step: 0.01, slide: updateLightDirection });
+            $('#slider-y').slider({ value: -1.0, min: -1.01, max: 1.01, step: 0.01, slide: updateLightDirection });
+            $('#slider-z').slider({ value: -1.0, min: -1.01, max: 1.01, step: 0.01, slide: updateLightDirection });
+            $('#slider-ld').slider({ value: 1.0, min: -0.01, max: 1.01, step: 0.01, slide: updateLightDiffuseTerm });
+
+        });
+
+        function updateObjectColor(r, g, b) {
+            gl.uniform4fv(shaderProg.materialDiffuse, [r, g, b, 1.0]);
+        }
+
+        function updateLightDirection() {
+            var x = $('#slider-x').slider("value");
+            var y = $('#slider-y').slider("value");
+            var z = $('#slider-z').slider("value");
+            gl.uniform4fv(shaderProg.lightPosition, [x, y, z, 0.0]);
+
+            $('#slider-x-value').html(x);
+            $('#slider-y-value').html(y);
+            $('#slider-z-value').html(z);
+        }
+
+        function updateLightDiffuseTerm() {
+            var ld = $('#slider-ld').slider("value");
+            gl.uniform4fv(shaderProg.lightDiffuse, [ld, ld, ld, 1.0]);
+            $('#slider-ld-value').html(ld);
+        }
+
+    </script>
+</head>
+<body>
+    <div id="overlay">
+        Phong Shading + phong Reflection Model using halfway vector
+        <p />
+        <button id="increaseSubdivision-btn">Increase Subdivisions</button>
+        <button id="decreaseSubdivision-btn">Decrease Subdivisions</button>
+        <button id="increaseZ-btn">Increase Z</button>
+        <button id="decreaseZ-btn">Decrease Z</button>
+        <button id="increaseRadius-btn">Increase R</button>
+        <button id="decreaseRadius-btn">Decrease R</button>
+        <p> </p>
+        <button id="increaseTheta-btn">Increase theta</button>
+        <button id="decreaseTheta-btn">Decrease theta</button>
+        <button id="increasePhi-btn">Increase phi</button>
+        <button id="decreasePhi-btn">Decrease phi</button>
+        <p></p>
+        <table>
+            <tr>
+                Light Direction:
+                <td>X:</td>
+                <td id='slider-x-value' width='30px' align='center'>0.0</td>
+                <td width='150px'><div id='slider-x' /></td>
+            </tr>
+            <tr>
+                <td>Y:</td>
+                <td id='slider-y-value' width='30px' align='center'>-1.0</td>
+                <td width='150px'><div id='slider-y' /></td>
+            </tr>
+            <tr>
+                <td>Z:</td>
+                <td id='slider-z-value' width='30px' align='center'>-1.0</td>
+                <td width='150px'><div id='slider-z' /></td>
+            </tr>
+            <tr>
+                <td colspan="2"> Sphere Color (Material Diffuse Term:</td>
+                <td>
+                    <div id='colorSelectorSphere' class='colorSelector'><div style='background-color:rgb(128,204,26)'></div></div>
+                </td>
+                <td align='right'>Light Diffuse Term:</td>
+                <td id='slider-ld-value' width='30px'>1.0</td>
+                <td width='150px' colspan='3'><div id='slider-ld' /></td>
+            </tr>
+            <tr>
+        </table>
+    </div>
+    <canvas id="myGLCanvas"></canvas>
+    <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        in vec4 vPositionAttr;
+        in vec4 vColorAttr;
+        in vec4 vNormalAttr;
+        out vec4 vColor;
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+
+        uniform vec4 lightPosition;
+        uniform mat4 normalMatrix;
+
+        out vec3 L;
+        out vec3 N;
+        out vec3 E;
+
+        void main(void){
+        // pos is vertex position in eye coordinates
+        vec3 pos = (modelViewMatrix * vPositionAttr).xyz;
+
+        //Transformed normal position
+        N = vec3(normalMatrix * vNormalAttr);
+
+        vec3 eyeVec = -vec3(pos);
+        E = eyeVec;
+
+        // check for directional light
+
+        if(lightPosition.w == 0.0) L = lightPosition.xyz;
+        else L =  lightPosition.xyz - pos ;
+
+        gl_Position = projectionMatrix * modelViewMatrix * vPositionAttr;
+
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        in vec4 vColor;
+        out vec4 finalColor;
+
+        uniform vec4 lightDiffuse;
+        uniform vec4 materialDiffuse;
+        uniform vec4 lightAmbient;
+        uniform vec4 materialAmbient;
+        uniform vec4 lightSpecular;
+        uniform vec4 materialSpecular;
+        uniform float shininess;
+
+        in vec3 L;
+        in vec3 N;
+        in vec3 E;
+        vec3 nL, nN, nE;
+
+        void main(void) {
+
+        nE = normalize(E);
+        nN = normalize(N);
+        nL = normalize(L);
+
+        vec3 H = normalize (-nL + nE);
+
+        //Lambert's cosine law
+        float lambertTerm = dot(nN,-nL);
+
+        float Kd = max (dot (nN, -nL) , 0.0);
+        //Ambient Term
+        vec4 Ia = lightAmbient * materialAmbient;
+
+        //Diffuse Term
+        vec4 Id = vec4(0.0,0.0,0.0,1.0);
+
+        //Specular Term
+        vec4 Is = vec4(0.0,0.0,0.0,1.0);
+
+        if(lambertTerm > 0.0) //only if lambertTerm is positive
+        {
+        Id = lightDiffuse* materialDiffuse * lambertTerm; //add diffuse term
+
+        //vec3 R = reflect(nL, nN);
+        //float specular = pow(max(dot(R, nE), 0.0), shininess );
+        float specular = pow(max(dot(H, nN), 0.0), shininess );
+
+        Is = lightSpecular * materialSpecular * specular; //add specular term
+        }
+
+        finalColor = Ia + Id + Is;
+        finalColor.a = 1.0;
+        }
+    </script>
+</body>
+</html>
