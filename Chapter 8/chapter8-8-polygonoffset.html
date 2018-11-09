@@ -1,0 +1,382 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Polygon with height field using polygon offset</title>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+    <script src="Common/js/Floor.js"></script>
+    <script src="Common/js/RenderLoop.js"></script>
+    <script src="Common/js/jquery-3.3.1.min.js"></script>
+    <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
+    <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
+    <link href='Common/css/styles.css' type='text/css' rel='stylesheet'>
+
+    <script>
+        "use strict"
+        var gl;
+        var vertexArray;
+        var vertexBuffer;
+        var stripElementBuffer;
+        var shaderProg;
+        var vertexArray2;
+        var vertexBuffer2;
+        var stripElementBuffer2;
+        var shaderProg2;
+        var vColor;
+        var pointsArray = [];
+
+        var position = [0.0, 0.0, 0.0];
+        var gRLoop;
+
+        const at = vec3.clone([0.0, 0.0, 0.0]);
+        const up = vec3.clone([0.0, 1.0, 0.0]);
+        var near = -10;
+        var far = 10;
+        var radius = 1.0;
+        var theta = 0.0;
+        var phi = 0.0;
+        var dr = 5.0 * Math.PI / 180.0;
+
+
+        var left = -2.0;
+        var right = 2.0;
+        var ytop = 2.0;
+        var bottom = -2.0;
+
+        var index = 0;
+        var nRows = 50;
+        var nColumns = 50;
+
+
+        window.addEventListener("load", function () {
+
+            gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.enable(gl.POLYGON_OFFSET_FILL);
+            gl.polygonOffset(1.0, 2.0);
+            setupShaders();
+            setupVertices();
+            setupBuffers();
+            gRLoop = new RenderLoop(draw, 5).start();
+        });
+
+        function setupShaders() {
+            shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+            gl.useProgram(shaderProg);
+            shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "a_position"),
+            shaderProg.uPointSizeLoc = gl.getUniformLocation(shaderProg, "uPointSize");
+            shaderProg.uColor = gl.getUniformLocation(shaderProg, "uColor");
+            shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
+            shaderProg.projectionMatrixLoc = gl.getUniformLocation(shaderProg, "projectionMatrix");
+            gl.useProgram(null);
+
+
+        }
+
+        function setupVertices() {
+
+          var data = [];
+          // data for radial hat function: sin(Pi*r)/(Pi*r)
+
+          var data = new Array(nRows);
+          for (var i = 0; i < nRows; i++) {
+              data[i] = new Array(nColumns);
+          }
+          for (var i = 0; i < nRows; i++) {
+              var x = Math.PI * (4 * i / nRows - 2.0);
+              for (var j = 0; j < nColumns; j++) {
+                  var y = Math.PI * (4 * j / nRows - 2.0);
+                  var r = Math.sqrt(x * x + y * y)
+
+                  if (r) data[i][j] = Math.sin(r) / r;
+                  else data[i][j] = 1;
+              }
+          }
+
+
+
+          for (var i = 0; i < nRows - 1; i++) {
+              for (var j = 0; j < nColumns - 1; j++) {
+                  pointsArray = pointsArray.concat([2 * i / nRows - 1, data[i][j], 2 * j / nColumns - 1]);
+                  pointsArray = pointsArray.concat([2 * (i + 1) / nRows - 1, data[i + 1][j], 2 * j / nColumns - 1]);
+                  pointsArray = pointsArray.concat([2 * (i + 1) / nRows - 1, data[i + 1][j + 1], 2 * (j + 1) / nColumns - 1]);
+                  pointsArray = pointsArray.concat([2 * i / nRows - 1, data[i][j + 1], 2 * (j + 1) / nColumns - 1]);
+              }
+          }
+
+        }
+
+
+
+        function setupBuffers() {
+
+            gl.useProgram(shaderProg);
+
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pointsArray), gl.STATIC_DRAW);
+
+
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+
+        }
+
+        function draw() {
+            let modelViewMatrix = mat4.create();
+            let projectionMatrix = mat4.create();
+
+            let eye = vec3.clone([radius * Math.sin(theta) * Math.cos(phi),
+                radius * Math.sin(theta) * Math.sin(phi), radius * Math.cos(theta)]);
+
+            mat4.lookAt(modelViewMatrix, eye, at, up);
+            mat4.ortho(projectionMatrix, left, right, bottom, ytop, near, far);
+
+
+            //mat4.translate(modelViewMatrix, modelViewMatrix, vec3.clone(position));
+
+
+            displayMatrix(modelViewMatrix);
+
+            gl.useProgram(shaderProg);
+            gl.bindVertexArray(vertexArray);
+            gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+            gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
+
+            for (var i = 0; i < pointsArray.length/3; i += 4) {
+                gl.uniform3f(shaderProg.uColor, 139/255, 69/255, 19/255);
+                gl.drawArrays(gl.TRIANGLE_FAN, i, 4);
+                gl.uniform3f(shaderProg.uColor, 1.0, 1.0, 0.0);
+                gl.drawArrays(gl.LINE_LOOP, i, 4);
+              }
+
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+
+        }
+
+
+    </script>
+</head>
+<body>
+    <div id='top'>
+        <h2>Polygon with height field  using polygon offset</h2>
+        <p></p>
+    </div>
+
+    <div id='contents'>
+        <div id='canvasContainer'>
+            <canvas id='myGLCanvas' width='480' height='400'></canvas>
+        </div>
+    </div>
+
+    <div id='bottom'>
+
+      <table>
+          <tr>
+              <td><button id="increaseZ-btn">Increase Z</button></td>
+              <td><button id="decreaseZ-btn">Decrease Z</button></td>
+              <td><button id="increaseR-btn">Increase R</button></td>
+              <td><button id="decreaseR-btn">Decrease R</button></td>
+              <td with="50px">
+                  <label for="near">Near</label>
+                  <input type="text" id="near" name="near">
+                  <label for="far">Far</label>
+                  <input type="text" id="far" name="far">
+                  <label for="radius">Radius</label>
+                  <input type="text" id="radius" name="radius">
+              </td>
+          </tr>
+          <tr>
+              <td><button id='increasetheta-btn'>Increase Theta</button></td>
+              <td><button id='decreasetheta-btn'>Decrease Theta</button></td>
+              <td><button id='increasephi-btn'>Increase Phi</button></td>
+              <td><button id='decreasephi-btn'>Decrease Phi</button></td>
+              <td with="50px">
+                  <label for="theta">Theta</label>
+                  <input type="text" id="theta" name="theta">
+                  <label for="phi">Phi</label>
+                  <input type="text" id="phi" name="phi">
+                  <label for="ytop">Top</label>
+                  <input type="text" id="ytop" name="ytop">
+              </td>
+          </tr>
+          <tr>
+              <td><button id="wider-btn">Wider</button></td>
+              <td><button id="narrower-btn">Narrower</button></td>
+              <td><button id="higher-btn">Higher</button></td>
+              <td><button id="shorter-btn">Shorter</button></td>
+              <td with="50px">
+                  <label for="left">Left</label>
+                  <input type="text" id="left" name="left">
+                  <label for="right">Right</label>
+                  <input type="text" id="right" name="right">
+                  <label for="ybottom">Bottom</label>
+                  <input type="text" id="ybottom" name="ybottom">
+              </td>
+          </tr>
+      </table>
+
+        <table>
+
+            <td align='center' style='vertical-align:top'>
+                <table id='tbl-matrix'>
+                    <tr><td id='m0'></td><td id='m4'></td><td id='m8'></td><td id='m12' style='font-weight:bold'></td></tr>
+                    <tr><td id='m1'></td><td id='m5'></td><td id='m9'></td><td id='m13' style='font-weight:bold'></td></tr>
+                    <tr><td id='m2'></td><td id='m6'></td><td id='m10'></td><td id='m14' style='font-weight:bold'></td></tr>
+                    <tr><td id='m3'></td><td id='m7'></td><td id='m11'></td><td id='m15'></td></tr>
+                </table>
+            </td>
+            <tr />
+        </table>
+    </div>
+
+    <script>
+
+    $('#near').val(near);
+    $('#far').val(far);
+    $('#radius').val(radius);
+    $('#theta').val(theta);
+    $('#phi').val(phi);
+    $('#left').val(left);
+    $('#right').val(right);
+    $('#ytop').val(ytop);
+    $('#ybottom').val(bottom);
+
+    $("#near").on("change paste keyup", function () {
+        near = $(this).val();
+    });
+    $("#far").on("change paste keyup", function () {
+        far = $(this).val();
+    });
+    $("#left").on("change paste keyup", function () {
+        left = $(this).val();
+    });
+    $("#right").on("change paste keyup", function () {
+        right = $(this).val();
+    });
+    $("#ytop").on("change paste keyup", function () {
+        ytop = $(this).val();
+    });
+    $("#ybottom").on("change paste keyup", function () {
+        ybottom = $(this).val();
+    });
+    $("#radius").on("change paste keyup", function () {
+        radius = $(this).val();
+    });
+    $("#theta").on("change paste keyup", function () {
+        theta = $(this).val();
+    });
+    $("#phi").on("change paste keyup", function () {
+        phi = $(this).val();
+    });
+
+    $('#increaseZ-btn').button();
+    $('#increaseZ-btn').click(
+        function () { near *= 1.1; far *= 1.1; $('#near').val(near); $('#far').val(far); });
+
+    $('#decreaseZ-btn').button();
+    $('#decreaseZ-btn').click(
+        function () { near *= 0.9; far *= 0.9; $('#near').val(near); $('#far').val(far); });
+
+    $('#increaseR-btn').button();
+    $('#increaseR-btn').click(
+        function () { radius *= 2.0; $('#radius').val(radius); });
+
+    $('#decreaseR-btn').button();
+    $('#decreaseR-btn').click(
+        function () { radius *= 0.5; $('#radius').val(radius); });
+
+    $('#increasetheta-btn').button();
+    $('#increasetheta-btn').click(
+        function () {
+            theta += dr; $('#theta').val(theta);
+        });
+
+    $('#decreasetheta-btn').button();
+    $('#decreasetheta-btn').click(
+        function () {
+            theta -= dr; $('#theta').val(theta);
+        });
+
+    $('#increasephi-btn').button();
+    $('#increasephi-btn').click(
+        function () {
+            phi += dr; $('#phi').val(phi);
+        });
+
+
+    $('#decreasephi-btn').button();
+    $('#decreasephi-btn').click(
+        function () {
+            phi -= dr; $('#phi').val(phi);
+        });
+
+    $('#wider-btn').button();
+    $('#wider-btn').click(
+        function () {
+            left *= 1.1; right *= 1.1; $('#left').val(left); $('#right').val(right);
+        });
+
+    $('#narrower-btn').button();
+    $('#narrower-btn').click(
+        function () {
+            left *= 0.9; right *= 0.9; $('#left').val(left); $('#right').val(right);
+        });
+
+    $('#higher-btn').button();
+    $('#higher-btn').click(
+        function () {
+            ytop *= 1.1; bottom *= 1.1; $('#ytop').val(ytop); $('#ybottom').val(bottom);
+        });
+
+    $('#shorter-btn').button();
+    $('#shorter-btn').click(
+        function () {
+            ytop *= 0.9; bottom *= 0.9; $('#ytop').val(ytop); $('#ybottom').val(bottom);
+        });
+
+
+        function displayMatrix(m) {
+            var selector = '';
+            for (var i = 0; i < 16; i++) {
+                selector = '#m' + i;
+                $(selector).html(m[i].toFixed(1));
+            }
+
+      }
+    </script>
+
+
+    <script id="vertex_shader" type="x-shader/x-vertex"> #version 300 es
+        in vec3 a_position;
+
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+
+        void main(void){
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(a_position, 1.0);
+        }
+    </script>
+    <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+        precision mediump float;
+        uniform vec3 uColor;
+        out vec4 finalColor;
+
+        void main(void) {
+        finalColor = vec4(uColor, 1.0);
+        }
+    </script>
+
+</body>
+</html>
