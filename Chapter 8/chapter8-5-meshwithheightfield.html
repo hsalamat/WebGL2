@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>Mesh</title>
+    <title>Mesh with height field</title>
 
     <script src="Common/js/gl.js"></script>
     <script src="Common/js/shaders.js"></script>
@@ -75,18 +75,31 @@
 
         function setupVertices() {
 
+          var data = [];
+          for (var i = 0; i < nRows; ++i) {
+              data.push([]);
+              var x = i;
 
+              for (var j = 0; j < nColumns; ++j) {
+
+                  var y = j;
+                  //var r = Math.sqrt(x * x + y * y);
+
+                  data[i][j] = 0;
+                   if (i > 10 && i < 15) data[i][j] = 0.5;
+              }
+          }
 
           for (var i = 0; i < nRows - 1; ++i) {
               for (var j = 0; j < nColumns - 1; ++j) {
-                  pointsArray = pointsArray.concat([2 * i / nRows - 1, 0, 2 * j / nColumns - 1]);
+                  pointsArray = pointsArray.concat([2 * i / nRows - 1, data[i][j], 2 * j / nColumns - 1]);
                   index++
               }
           }
 
           for (var j = 0; j < nColumns - 1; j++) {
               for (var i = 0; i < nRows - 1; i++) {
-                  pointsArray = pointsArray.concat([2 * i / nRows - 1, 0, 2 * j / nColumns - 1]);
+                  pointsArray = pointsArray.concat([2 * i / nRows - 1, data[i][j], 2 * j / nColumns - 1]);
                   index++
               }
           }
@@ -156,7 +169,7 @@
 </head>
 <body>
     <div id='top'>
-        <h2>Mesh</h2>
+        <h2>Mesh with height field</h2>
         <p></p>
     </div>
 
