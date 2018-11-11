@@ -241,7 +241,7 @@
             gl.disableVertexAttribArray( shaderProg.vColor );
             gl.vertexAttrib3f(shaderProg.vColor, 0.3, 0.3, 0.3);
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
-            drawTable(); //daw shadow
+            drawTable(); //draw shadow
             gl.enableVertexAttribArray( shaderProg.vColor );
             popModelViewMatrix();
 
