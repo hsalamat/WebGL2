@@ -270,13 +270,13 @@
             // it's here for generality but since there is
             // no scaling in this example we could just use modelView matrix in shaders
 
-            //mat4.invert(normalMatrix, modelViewMatrix);
-            mat4.clone(normalMatrix,modelViewMatrix);
+            mat4.invert(normalMatrix, modelViewMatrix);
+            //mat4.clone(normalMatrix,modelViewMatrix);
 
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
             gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
-            gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, false, normalMatrix);
-            //gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
+            //gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, false, normalMatrix);
+            gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
 
 
             gl.drawArrays(gl.TRIANGLES, 0, index);
