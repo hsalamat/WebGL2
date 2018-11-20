@@ -649,6 +649,7 @@
 
         finalColor = Ia + Id + Is;
         finalColor.a = 1.0;
+        finalColor = finalColor * vColor;
         }
     </script>
     <script id="vertex_shader2" type="x-shader/x-vertex">#version 300 es
