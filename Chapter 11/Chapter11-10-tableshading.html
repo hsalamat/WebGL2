@@ -45,7 +45,7 @@
         var modelViewMatrix = mat4.create();
         var projectionMatrix = mat4.create();
         var modelViewMatrixStack = [];
-        var fovy = glMatrix.toRadian(70.0);  // vertical Field-of-view (in Y direction) angle (in radians)
+        var fovy = glMatrix.toRadian(45.0);  // vertical Field-of-view (in Y direction) angle (in radians)
         const at = vec3.clone([0.0, 0.0, 0.0]);
         const up = vec3.clone([0.0, 1.0, 0.0]);
         var near = 0.1;
@@ -53,12 +53,12 @@
         var radius = 10.0;
         var aspect = 1.0;
         //var theta = 10.0 * Math.PI / 180.0;
-        var theta = 0.8726646259971648;
-        var phi = 1.5707963267948966;
+        var theta = 0.5;
+        var phi = 1.5;
         var dr = 5.0 * Math.PI / 180.0;
         var cubeVertexPositionBuffer;
         var cubeVertexIndexBuffer;
-        var light = [0.0, 2.0, 0.0];
+
         var axis = 0;
         var xAxis = 0;
         var yAxis = 1;
@@ -70,8 +70,8 @@
         var normalsArray = [];
         var normalBuffer;
         var normalMatrix = mat4.create();
-        //var lightDirection = [0.0,-1.0, -1.0];
-        var lightPosition = [0.0, -1.0, -1.0, 0.0];
+        //var lightDirection = [0.0,2.0, 0.0];
+        var lightPosition = [-1.0, -4.0, 3.0, 0.0];
         var lightAmbient = [0.2, 0.2, 0.2, 1.0];
         var lightDiffuse = [1.0, 1.0, 1.0, 1.0];
         var lightSpecular = [1.0, 1.0, 1.0, 1.0];
@@ -267,6 +267,7 @@
             mat4.invert(normalMatrix, modelViewMatrix);
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
             gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
+            gl.uniform4fv(shaderProg.lightPosition, lightPosition);
             drawTable();
             popModelViewMatrix();
 
@@ -274,12 +275,12 @@
             //creating shadow
             let shadowMatrix = mat4.create();
             shadowMatrix[15] = 0.0;
-            shadowMatrix[7] = -1 / light[1];
+            shadowMatrix[7] = -1 / lightPosition[1];
 
             //pushModelViewMatrix();
-            //mat4.translate(modelViewMatrix, modelViewMatrix, [light[0], light[1], light[2]]);
+            //mat4.translate(modelViewMatrix, modelViewMatrix, [lightPosition[0], lightPosition[1], lightPosition[2]]);
             //mat4.multiply(modelViewMatrix, modelViewMatrix, shadowMatrix);
-            //mat4.translate(modelViewMatrix, modelViewMatrix, [-light[0], -light[1], -light[2]]);
+            //mat4.translate(modelViewMatrix, modelViewMatrix, [-lightPosition[0], -lightPosition[1], -lightPosition[2]]);
             //mat4.invert(normalMatrix, modelViewMatrix);
             //gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
             //gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
@@ -397,37 +398,6 @@
             $("#increasePhi-btn").click(function () { phi += dr; });
             $("#decreasePhi-btn").button();
             $("#decreasePhi-btn").click(function () { phi -= dr; });
-            $('#colorSelectorSphere').ColorPicker({
-                onSubmit: function (hsb, hex, rgb, el) {
-                    $(el).val(hex);
-                    $(el).ColorPickerHide();
-
-                },
-                color: '#00ff00',
-                onShow: function (colpkr) {
-                    $(colpkr).fadeIn(500);
-                    return false;
-                },
-                onHide: function (colpkr) {
-                    $(colpkr).fadeOut(500);
-                    return false;
-                },
-                onChange: function (hsb, hex, rgb) {
-                    $('#colorSelectorSphere div').css('backgroundColor', '#' + hex);
-                    updateObjectColor(rgb.r / 256, rgb.g / 256, rgb.b / 256);
-                },
-
-                onBeforeShow: function (colpkr) {
-                    $(colpkr).ColorPickerSetColor('rgb(0.5,0.8,0.1)');
-                }
-            })
-
-            $('#slider-x').slider({ value: 0.0, min: -1.01, max: 1.01, step: 0.01, slide: updateLightDirection });
-            $('#slider-y').slider({ value: -1.0, min: -1.01, max: 1.01, step: 0.01, slide: updateLightDirection });
-            $('#slider-z').slider({ value: -1.0, min: -1.01, max: 1.01, step: 0.01, slide: updateLightDirection });
-            $('#slider-ld').slider({ value: 1.0, min: -0.01, max: 1.01, step: 0.01, slide: updateLightDiffuseTerm });
-
-
 
             function updateProjection() {
                 fovy = $('#slider-fovy').slider("value");
@@ -437,43 +407,23 @@
             }
             $('#slider-fovy').slider({ value: 45, min: 10, max: 120, step: 5, slide: updateProjection });
             $('#slider-aspect').slider({ value: 1, min: 0.5, max: 2, step: 0.1, slide: updateProjection });
-            function updateX() {
-                light[0] = $('#slider-x').slider("value");
-                $('#slider-x-value').html(light[0]);
-            }
-            function updateY() {
-                light[1] = $('#slider-y').slider("value");
-                $('#slider-y-value').html(light[1]);
-            }
-            function updateZ() {
-                light[2] = $('#slider-z').slider("value");
-                $('#slider-z-value').html(light[2]);
-            }
-            $('#slider-x').slider({ value: 0, min: -5, max: 5, step: 1, slide: updateX });
-            $('#slider-y').slider({ value: 2, min: -5, max: 5, step: 1, slide: updateY });
-            $('#slider-z').slider({ value: 0, min: -5, max: 5, step: 1, slide: updateZ });
 
+            $('#slider-x').slider({ value: -1, min: -5, max: 5, step: 1, slide: updateLightDirection });
+            $('#slider-y').slider({ value: -4, min: -5, max: 5, step: 1, slide: updateLightDirection });
+            $('#slider-z').slider({ value: 3, min: -5, max: 5, step: 1, slide: updateLightDirection });
 
-            function updateObjectColor(r, g, b) {
-                gl.uniform4fv(shaderProg.materialDiffuse, [r, g, b, 1.0]);
-            }
 
             function updateLightDirection() {
-                var x = $('#slider-x').slider("value");
-                var y = $('#slider-y').slider("value");
-                var z = $('#slider-z').slider("value");
-                gl.uniform4fv(shaderProg.lightPosition, [x, y, z, 0.0]);
+                lightPosition[0] = $('#slider-x').slider("value");
+                lightPosition[1] = $('#slider-y').slider("value");
+                lightPosition[2] = $('#slider-z').slider("value");
+                //gl.uniform4fv(shaderProg.lightPosition, [x, y, z, 0.0]);
 
-                $('#slider-x-value').html(x);
-                $('#slider-y-value').html(y);
-                $('#slider-z-value').html(z);
+                $('#slider-x-value').html(  lightPosition[0]);
+                $('#slider-y-value').html(  lightPosition[1]);
+                $('#slider-z-value').html(  lightPosition[2]);
             }
 
-            function updateLightDiffuseTerm() {
-                var ld = $('#slider-ld').slider("value");
-                gl.uniform4fv(shaderProg.lightDiffuse, [ld, ld, ld, 1.0]);
-                $('#slider-ld-value').html(ld);
-            }
 
         });
     </script>
@@ -530,34 +480,7 @@
 
         </div>
         <p></p>
-        <table>
-            <tr>
-                Light Direction:
-                <td>X:</td>
-                <td id='slider-x-value' width='30px' align='center'>0.0</td>
-                <td width='150px'><div id='slider-x' /></td>
-            </tr>
-            <tr>
-                <td>Y:</td>
-                <td id='slider-y-value' width='30px' align='center'>-1.0</td>
-                <td width='150px'><div id='slider-y' /></td>
-            </tr>
-            <tr>
-                <td>Z:</td>
-                <td id='slider-z-value' width='30px' align='center'>-1.0</td>
-                <td width='150px'><div id='slider-z' /></td>
-            </tr>
-            <tr>
-                <td colspan="2"> Sphere Color (Material Diffuse Term:</td>
-                <td>
-                    <div id='colorSelectorSphere' class='colorSelector'><div style='background-color:rgb(128,204,26)'></div></div>
-                </td>
-                <td align='right'>Light Diffuse Term:</td>
-                <td id='slider-ld-value' width='30px'>1.0</td>
-                <td width='150px' colspan='3'><div id='slider-ld' /></td>
-            </tr>
-            <tr>
-        </table>
+
     </div>
     </div>
 
@@ -639,7 +562,8 @@
 
         if(lambertTerm > 0.0) //only if lambertTerm is positive
         {
-        Id = lightDiffuse* materialDiffuse * lambertTerm; //add diffuse term
+        //  materialDiffuse = vColor; //actual table's color
+        Id = lightDiffuse* vColor * lambertTerm; //add diffuse term
 
         vec3 R = reflect(nL, nN);
         float specular = pow(max(dot(R, nE), 0.0), shininess );
@@ -649,7 +573,6 @@
 
         finalColor = Ia + Id + Is;
         finalColor.a = 1.0;
-        finalColor = finalColor * vColor;
         }
     </script>
     <script id="vertex_shader2" type="x-shader/x-vertex">#version 300 es
