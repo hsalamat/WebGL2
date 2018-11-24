@@ -37,8 +37,9 @@
                   var patchx = Math.floor(i / (texSize / numRows));
                   var patchy = Math.floor(j / (texSize / numCols));
 
-                  //The first 32 byte (0-31) is black [0,0,0,255], so are all the odd multiplcations of 32
-                  //The second 32 byte (32-63) is red [225,0,0,255], so are all the even multiplcations of 32
+                  //The first 32 bytes (0-31) is black [0,0,0,255] as well as all the odd multiplications of 32.
+                  //The second 32 byte (32-63) is red [225,0,0,255] as well as all the even multiplications of 32.
+                  
                   c = (patchx % 2 !== patchy % 2 ? 255 : 0);
 
                   var index = numComponents * (i * texSize + j);
@@ -50,7 +51,7 @@
           }
 
           console.log(myImage);
-          alert("open the console and see myImage and myImage2 variables");
+          alert("open the console and check myImage variable");
         }
     </script>
 </head>
