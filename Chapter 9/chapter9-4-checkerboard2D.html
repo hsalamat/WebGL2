@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Checkerboard</title>
+    <style>
+        #overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-family: monospace;
+            padding: 1em;
+            border-radius: 1em;
+            border: 1px solid #f00;
+            text-shadow: 0px 0px 1px white;
+        }
+    </style>
+
+    <script src="Common/js/gl.js"></script>
+    <script src="Common/js/shaders.js"></script>
+    <script src="Common/js/gl-matrix.js"></script>
+    <script src="Common/js/jquery-3.3.1.min.js"></script>
+    <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
+    <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
+    <link href='Common/css/style.css' type='text/css' rel='stylesheet' />
+
+
+    <script id='code-js' type="text/javascript">
+    var texSize = 64;
+    var numRows = 8;
+    var numCols = 8;
+    var numComponents = 4;
+    var myImage;
+    var red = [1.0, 0.0, 0.0, 1.0];
+    var black = [0.0, 0.0, 0.0, 1.0];
+
+        function startup() {
+        myImage = new Array();
+          for (var i = 0; i < texSize; ++i) {
+            myImage[i] = new Array(texSize);
+              for (var j = 0; j < texSize; ++j) {
+                  var patchx = Math.floor(i / (texSize / numRows));
+                  var patchy = Math.floor(j / (texSize / numCols));
+
+                  //The first 32 byte (0-31) is black [0,0,0,255], so are all the odd multiplcations of 32
+                  //The second 32 byte (32-63) is red [225,0,0,255], so are all the even multiplcations of 32
+                  myImage[i][j] = (patchx % 2 !== patchy % 2 ? red : black);
+              }
+          }
+
+          console.log(myImage);
+          alert("open the console and see myImage data");
+        }
+    </script>
+</head>
+<body onload="startup();">
+    <div id='top'>
+        <h2>Create an RGBA checkerboard Image</h2>
+    </div>
+
+</body>
+
+</html>
