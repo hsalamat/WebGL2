@@ -38,8 +38,6 @@
         var vertexColors = [];
         var texCoordsArray = [];
         var texCoord = [];
-
-
         const at = vec3.clone([0.0, 0.0, 0.0]);
         const up = vec3.clone([0.0, 1.0, 0.0]);
         var near = -1;
@@ -48,12 +46,10 @@
         var theta =  0.0;
         var phi = 0.0;
         var dr = 5.0 * Math.PI / 180.0;
-
         var left = -1.0;
         var right = 1.0;
         var ytop = 1.0;
         var bottom = -1.0;
-
         var axis = 0;
         var xAxis = 0;
         var yAxis = 1;
@@ -62,7 +58,6 @@
         var flag = true;
         var gRLoop;
         var image;
-
         window.addEventListener("load", function () {
             gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
             gl.enable(gl.DEPTH_TEST);
@@ -72,7 +67,6 @@
             //gRLoop = new RenderLoop(draw,5).start();
             draw();
         });
-
         function setupShaders() {
             shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
             gl.useProgram(shaderProg);
@@ -83,22 +77,17 @@
             shaderProg.vTexCoord = gl.getAttribLocation(shaderProg, "vTexCoord");
             shaderProg.uTexture = gl.getUniformLocation(shaderProg, "textureMap");
             shaderProg.uAngle = gl.getUniformLocation(shaderProg, "uAngle");
-
             gl.useProgram(null);
         }
-
         function setupVertices() {
-
             quad(1, 0, 3, 2);
             quad(2, 3, 7, 6);
             quad(3, 0, 4, 7);
             quad(6, 5, 1, 2);
             quad(4, 5, 6, 7);
             quad(5, 4, 0, 1);
-
         }
         function quad(a, b, c, d) {
-
             vertices[0] = vec3.clone([-0.25, -0.25, 0.25]);
             vertices[1] = vec3.clone([-0.25, 0.25, 0.25]);
             vertices[2] = vec3.clone([0.25, 0.25, 0.25]);
@@ -107,7 +96,6 @@
             vertices[5] = vec3.clone([-0.25, 0.25, -0.25]);
             vertices[6] = vec3.clone([0.25, 0.25, -0.25]);
             vertices[7] = vec3.clone([0.25, -0.25, -0.25]);
-
             vertexColors[0] = vec3.clone([0.0, 0.0, 0.0]);// black
             vertexColors[1] = vec3.clone([1.0, 0.0, 0.0]);// red
             vertexColors[2] = vec3.clone([1.0, 1.0, 0.0]);// yellow
@@ -116,64 +104,47 @@
             vertexColors[5] = vec3.clone([1.0, 0.0, 1.0]);// magenta
             vertexColors[6] = vec3.clone([0.0, 1.0, 1.0]); // cyan
             vertexColors[7] = vec3.clone([1.0, 1.0, 1.0]);// white
-
             texCoord[0] = vec2.clone([0,0]);
             texCoord[1] = vec2.clone([0,1]);
             texCoord[2] = vec2.clone([1,1]);
             texCoord[3] = vec2.clone([0,0]);
             texCoord[4] = vec2.clone([1,1]);
             texCoord[5] = vec2.clone([1,0]);
-
-
             var indices = [a, b, c, a, c, d];
-
             for (var i = 0; i < indices.length; ++i) {
                 points.push(...vertices[indices[i]]);
                 colors.push(...vertexColors[a]);
                 texCoordsArray.push(...texCoord[i]);
             }
         }
-
-
         function setupBuffers() {
-
             vertexBuffer = gl.createBuffer();
             setupVertices();
-
             vertexBuffer.itemSize = 3;
             vertexBuffer.numberOfItems = points.length / 3;
-
             colorBuffer = gl.createBuffer();
-
             gl.useProgram(shaderProg);
-
             vertexArray = gl.createVertexArray();
             gl.bindVertexArray(vertexArray);
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
             gl.enableVertexAttribArray(shaderProg.aPositionLoc);
             gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
-
             gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
             gl.enableVertexAttribArray(shaderProg.vColor);
             gl.vertexAttribPointer(shaderProg.vColor, 3, gl.FLOAT, false, 0, 0);
-
             textureBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoordsArray), gl.STATIC_DRAW);
             gl.vertexAttribPointer(shaderProg.vTexCoord, 2, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray(shaderProg.vTexCoord);
-
             gl.bindVertexArray(null);
         }
-
-
         function setupTextures() {
             image = document.getElementById("texImage");
             configureTexture(image);
         }
-
         function configureTexture(image) {
           gl.useProgram(shaderProg);
           texture = gl.createTexture();
@@ -185,10 +156,8 @@
           gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR );
           //gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S,gl.REPEAT);
           //gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT );
-
           gl.uniform1i(shaderProg.uTexture, 0);
         }
-
         function draw() {
             //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             //gl.enable(gl.DEPTH_TEST);
@@ -197,32 +166,21 @@
             //gl.clearDepth(1.0);
             gl.useProgram(shaderProg);
             gl.bindVertexArray(vertexArray);
-
             if (flag) rtheta[axis] += 2.0;
             gl.uniform3fv(shaderProg.uAngle, rtheta);
-
             gl.bindTexture( gl.TEXTURE_2D, texture );
             gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB,gl.RGB, gl.UNSIGNED_BYTE, image );
-
-
-
             let modelViewMatrix = mat4.create();
             let projectionMatrix = mat4.create();
-
             let eye = vec3.clone([radius * Math.sin(theta) * Math.cos(phi),
                 radius * Math.sin(theta) * Math.sin(phi), radius * Math.cos(theta)]);
-
             //mat4.lookAt(modelViewMatrix, eye, at, up);
             //mat4.rotate(modelViewMatrix, modelViewMatrix, rtheta[xAxis], [1, 0, 0]);
             //mat4.rotate(modelViewMatrix, modelViewMatrix, rtheta[yAxis], [0, 1, 0]);
             //mat4.rotate(modelViewMatrix, modelViewMatrix, rtheta[zAxis], [0, 0, 1]);
-
-
             mat4.ortho(projectionMatrix, left, right, bottom, ytop, near, far);
-
             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
             gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
-
             gl.drawArrays(gl.TRIANGLES, 0, 36);
             gl.bindVertexArray(null);
             requestAnimationFrame(draw);
@@ -251,87 +209,79 @@
             $('#rotatex-btn').click(
                 function () {
                     if ($('#rotatex-btn:checked').val() == null) {
-
                     }
                     else {
                         axis = xAxis;
                     }
                 });
-
             $('#rotatey-btn').button();
             $('#rotatey-btn').click(
                 function () {
                     if ($('#rotatey-btn:checked').val() == null) {
-
                     }
                     else {
                         axis = yAxis;
                     }
                 });
-
             $('#rotatez-btn').button();
             $('#rotatez-btn').click(
                 function () {
                     if ($('#rotatez-btn:checked').val() == null) {
-
                     }
                     else {
                         axis = zAxis;
                     }
                 });
-
-
             $('#rotatet-btn').button();
             $('#rotatet-btn').click(
                 function () {
                     if ($('#rotatet-btn:checked').val() == null) {
-
                     }
                     else {
                         flag = !flag;
                     }
                 });
-          
+
           $('#opt-s-wrap').buttonset();
           $('#opt-t-wrap').buttonset();
-          
+
           $('#s-clamp-to-edge').click(function () {
                                       gl.bindTexture(gl.TEXTURE_2D, texture);
                                       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                                       gl.uniform1i(shaderProg.textureLoc, 0);
                                       //gl.bindTexture(gl.TEXTURE_2D, null);
                                       });
-          
+
           $('#s-repeat').click(function () {
                                gl.bindTexture(gl.TEXTURE_2D, texture);
                                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
                                gl.uniform1i(shaderProg.textureLoc, 0);
                                //gl.bindTexture(gl.TEXTURE_2D, null);
                                });
-          
+
           $('#s-mirrored-repeat').click(function () {
                                         gl.bindTexture(gl.TEXTURE_2D, texture);
                                         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
                                         gl.uniform1i(shaderProg.textureLoc, 0);
                                         //gl.bindTexture(gl.TEXTURE_2D, null);
                                         });
-          
-          
-          
+
+
+
           $('#t-clamp-to-edge').click(function () {
                                       gl.bindTexture(gl.TEXTURE_2D, texture);
                                       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                                       gl.uniform1i(shaderProg.textureLoc, 0);
                                       //gl.bindTexture(gl.TEXTURE_2D, null);
                                       });
-          
+
           $('#t-repeat').click(function () {
                                gl.bindTexture(gl.TEXTURE_2D, texture);
                                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
                                gl.uniform1i(shaderProg.textureLoc, 0);
                                //gl.bindTexture(gl.TEXTURE_2D, null);
                                });
-          
+
           $('#t-mirrored-repeat').click(function () {
                                         gl.bindTexture(gl.TEXTURE_2D, texture);
                                         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
@@ -339,7 +289,6 @@
                                         //gl.bindTexture(gl.TEXTURE_2D, null);
                                         });
 
-          
         });
     </script>
 </head>
@@ -407,44 +356,31 @@
         in vec3 vPositionAttr;
         in vec3 vColorAttr;
         out vec4 vColor;
-
         in vec2 vTexCoord;
         out vec2 fTexCoord;
-
         uniform mat4 modelViewMatrix;
         uniform mat4 projectionMatrix;
-
         uniform vec3 uAngle;
         void main(void){
-
        //vec3 theta = vec3(30,30,0);
         vec3 angles = radians( uAngle );
         vec3 c = cos( angles );
         vec3 s = sin( angles );
-
-
       // Remeber: thse matrices are column-major
   mat4 rx = mat4( 1.0,  0.0,  0.0, 0.0,
                   0.0,  c.x,  s.x, 0.0,
                   0.0, -s.x,  c.x, 0.0,
                   0.0,  0.0,  0.0, 1.0 );
-
   mat4 ry = mat4( c.y, 0.0, -s.y, 0.0,
                   0.0, 1.0,  0.0, 0.0,
                   s.y, 0.0,  c.y, 0.0,
                   0.0, 0.0,  0.0, 1.0 );
-
-
   mat4 rz = mat4( c.z, s.z, 0.0, 0.0,
                   -s.z,  c.z, 0.0, 0.0,
                   0.0,  0.0, 1.0, 0.0,
                   0.0,  0.0, 0.0, 1.0 );
-
      gl_Position = projectionMatrix * modelViewMatrix *  rz * ry * rx * vec4(vPositionAttr, 1.0);
-
-
         //gl_Position =  ry * rx * vec4(vPositionAttr,1.0);
-
         //gl_Position = projectionMatrix * vec4(vPositionAttr, 1.0);
         gl_Position.z = -gl_Position.z;
         vColor = vec4(vColorAttr, 1.0);
@@ -457,10 +393,8 @@
         precision mediump float;
         in vec4 vColor;
         out vec4 finalColor;
-
         in  vec2 fTexCoord;
         uniform sampler2D textureMap;
-
         void main()
         {
             finalColor = texture( textureMap, fTexCoord );
