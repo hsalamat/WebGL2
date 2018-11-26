@@ -291,6 +291,55 @@
                         flag = !flag;
                     }
                 });
+          
+          $('#opt-s-wrap').buttonset();
+          $('#opt-t-wrap').buttonset();
+          
+          $('#s-clamp-to-edge').click(function () {
+                                      gl.bindTexture(gl.TEXTURE_2D, texture);
+                                      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                                      gl.uniform1i(shaderProg.textureLoc, 0);
+                                      //gl.bindTexture(gl.TEXTURE_2D, null);
+                                      });
+          
+          $('#s-repeat').click(function () {
+                               gl.bindTexture(gl.TEXTURE_2D, texture);
+                               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+                               gl.uniform1i(shaderProg.textureLoc, 0);
+                               //gl.bindTexture(gl.TEXTURE_2D, null);
+                               });
+          
+          $('#s-mirrored-repeat').click(function () {
+                                        gl.bindTexture(gl.TEXTURE_2D, texture);
+                                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+                                        gl.uniform1i(shaderProg.textureLoc, 0);
+                                        //gl.bindTexture(gl.TEXTURE_2D, null);
+                                        });
+          
+          
+          
+          $('#t-clamp-to-edge').click(function () {
+                                      gl.bindTexture(gl.TEXTURE_2D, texture);
+                                      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                                      gl.uniform1i(shaderProg.textureLoc, 0);
+                                      //gl.bindTexture(gl.TEXTURE_2D, null);
+                                      });
+          
+          $('#t-repeat').click(function () {
+                               gl.bindTexture(gl.TEXTURE_2D, texture);
+                               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+                               gl.uniform1i(shaderProg.textureLoc, 0);
+                               //gl.bindTexture(gl.TEXTURE_2D, null);
+                               });
+          
+          $('#t-mirrored-repeat').click(function () {
+                                        gl.bindTexture(gl.TEXTURE_2D, texture);
+                                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+                                        gl.uniform1i(shaderProg.textureLoc, 0);
+                                        //gl.bindTexture(gl.TEXTURE_2D, null);
+                                        });
+
+          
         });
     </script>
 </head>
@@ -317,10 +366,43 @@
                 <td><label id='lblrotatet' for='rotatet-btn'>Toggle Rotation</label><input id='rotatet-btn' type='checkbox' /></td>
             </tr>
         </table>
+        <table style='padding=0px'>
+            <tr>
+                <td>
+                    <table cellspacing=4px style='vertical-align:top'>
+                        <tr>
+                            <td>Wrap S:</td>
+                            <td>
+                                <div id='opt-s-wrap' align='center'>
+                                    <input type='radio' id='s-clamp-to-edge' name='s-wrap' /><label for='s-clamp-to-edge'>CLAMP_TO_EDGE</label>
+                                    <input type='radio' id='s-repeat' name='s-wrap' checked='checked' /><label for='s-repeat'>REPEAT</label>
+                                    <input type='radio' id='s-mirrored-repeat' name='s-wrap' /><label for='s-mirrored-repeat'>MIRRORED_REPEAT</label>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table cellspacing=4px style='vertical-align:top'>
+                        <tr>
+                            <td>Wrap T:</td>
+                            <td>
+                                <div id='opt-t-wrap' align='center'>
+                                    <input type='radio' id='t-clamp-to-edge' name='t-wrap' /><label for='t-clamp-to-edge'>CLAMP_TO_EDGE</label>
+                                    <input type='radio' id='t-repeat' name='t-wrap' checked='checked' /><label for='t-repeat'>REPEAT</label>
+                                    <input type='radio' id='t-mirrored-repeat' name='t-wrap' /><label for='t-mirrored-repeat'>MIRRORED_REPEAT</label>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
       </div>
 
-    <!--img id="texImage" src="stickman.jpg" style="display:none" crossorigin="anonymous"/-->
-    <video id="zombie" src="zombie.mp4" autoplay='true' style='display: none'></video>
+    <img id="texImage" src="webgl-marble.png" style="display:none" crossorigin="anonymous">
     <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
         in vec3 vPositionAttr;
         in vec3 vColorAttr;
