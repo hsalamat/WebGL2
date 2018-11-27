@@ -257,7 +257,7 @@ gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_B
 <body>
   <canvas id="myGLCanvas"></canvas>
     <div id="overlay">
-        texture wrapping
+        cube mapping
         <p />
         <button id="increaseZ-btn">Increase Z</button>
         <button id="decreaseZ-btn">Decrease Z</button>
@@ -296,7 +296,6 @@ gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_B
         uniform mat4 projectionMatrix;
         uniform vec3 uAngle;
         void main(void){
-       //vec3 theta = vec3(30,30,0);
         vec3 angles = radians( uAngle );
         vec3 c = cos( angles );
         vec3 s = sin( angles );
@@ -314,8 +313,7 @@ gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_B
                   0.0,  0.0, 1.0, 0.0,
                   0.0,  0.0, 0.0, 1.0 );
      gl_Position = projectionMatrix * modelViewMatrix *  rz * ry * rx * vec4(vPositionAttr, 1.0);
-        //gl_Position =  ry * rx * vec4(vPositionAttr,1.0);
-        //gl_Position = projectionMatrix * vec4(vPositionAttr, 1.0);
+
         gl_Position.z = -gl_Position.z;
         vColor = vec4(vColorAttr, 1.0);
         fTexCoord = vTexCoord;
@@ -331,8 +329,7 @@ gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_B
         uniform samplerCube textureMap;
         void main()
         {
-            //finalColor = texture( textureMap, fTexCoord );
-            finalColor = textureCube( textureMap, fTexCoord );
+            finalColor = texture( textureMap, fTexCoord );
         }
     </script>
 </body>
