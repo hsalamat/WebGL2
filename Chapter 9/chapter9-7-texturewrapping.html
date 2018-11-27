@@ -168,8 +168,6 @@
             gl.bindVertexArray(vertexArray);
             if (flag) rtheta[axis] += 2.0;
             gl.uniform3fv(shaderProg.uAngle, rtheta);
-            gl.bindTexture( gl.TEXTURE_2D, texture );
-            gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB,gl.RGB, gl.UNSIGNED_BYTE, image );
             let modelViewMatrix = mat4.create();
             let projectionMatrix = mat4.create();
             let eye = vec3.clone([radius * Math.sin(theta) * Math.cos(phi),
