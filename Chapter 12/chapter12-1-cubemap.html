@@ -164,6 +164,9 @@
             gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, texImage5 );
             gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, texImage6 );
             //gl.generateMipmap( TEXTURE_CUBE_MAP );
+            gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
             gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
             gl.uniform1i(shaderProg.uTexture, 0);
@@ -281,12 +284,12 @@
         <img id="texImage0" src="webgl.png" style="display:none" crossorigin="anonymous">
         
         <img id="texImage1" src="polarbear.jpg" style="display:none" crossorigin="anonymous">
-            <img id="texImage2" src="gingerhouse.jpg" style="display:none" crossorigin="anonymous">
-                <img id="texImage3" src="indigokids.jpg" style="display:none" crossorigin="anonymous">
-                    <img id="texImage4" src="peanut.jpg" style="display:none" crossorigin="anonymous">
-                        <img id="texImage5" src="mcdonald.jpg" style="display:none" crossorigin="anonymous">
-                            <img id="texImage6" src="donuts.jpg" style="display:none" crossorigin="anonymous">
-                                <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+        <img id="texImage2" src="gingerhouse.jpg" style="display:none" crossorigin="anonymous">
+        <img id="texImage3" src="indigokids.jpg" style="display:none" crossorigin="anonymous">
+        <img id="texImage4" src="peanut.jpg" style="display:none" crossorigin="anonymous">
+        <img id="texImage5" src="mcdonald.jpg" style="display:none" crossorigin="anonymous">
+        <img id="texImage6" src="donuts.jpg" style="display:none" crossorigin="anonymous">
+        <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
                                     in vec3 vPositionAttr;
                                     in vec3 vColorAttr;
                                     out vec4 vColor;
