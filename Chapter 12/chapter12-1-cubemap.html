@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>cube map</title>
+        <style>
+            #overlay {
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                font-family: monospace;
+                padding: 1em;
+                border-radius: 1em;
+                border: 1px solid #f00;
+                text-shadow: 0px 0px 1px white;
+            }
+        </style>
+        
+        <script src="Common/js/gl.js"></script>
+        <script src="Common/js/shaders.js"></script>
+        <script src="Common/js/gl-matrix.js"></script>
+        <script src="Common/js/RenderLoop.js"></script>
+        <script src="Common/js/jquery-3.3.1.min.js"></script>
+        <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
+        <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
+        <link href='Common/css/style.css' type='text/css' rel='stylesheet' />
+        
+        
+        <script>
+            var gl;
+            var vertexArray;
+            var vertexBuffer;
+            var colorBuffer;
+            var textureBuffer;
+            var shaderProg;
+            var vColor;
+            var points = [];
+            var colors = [];
+            var vertices = [];
+            var vertexColors = [];
+            var texCoordsArray = [];
+            var texCoord = [];
+            const at = vec3.clone([0.0, 0.0, 0.0]);
+            const up = vec3.clone([0.0, 1.0, 0.0]);
+            var near = -1;
+            var far = 1;
+            var radius = 1.0;
+            var theta =  0.0;
+            var phi = 0.0;
+            var dr = 5.0 * Math.PI / 180.0;
+            var left = -1.0;
+            var right = 1.0;
+            var ytop = 1.0;
+            var bottom = -1.0;
+            var axis = 0;
+            var xAxis = 0;
+            var yAxis = 1;
+            var zAxis = 2;
+            var rtheta = [0.0, 0.0, 0.0];
+            var flag = true;
+            var gRLoop;
+            var texture, texImage1, texImage2, texImage3, texImage4, texImage5, texImage6;
+            window.addEventListener("load", function () {
+                                    gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+                                    gl.enable(gl.DEPTH_TEST);
+                                    setupShaders();
+                                    setupTextures();
+                                    setupBuffers();
+                                    //gRLoop = new RenderLoop(draw,5).start();
+                                    draw();
+                                    });
+                                    function setupShaders() {
+                                        shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+                                        gl.useProgram(shaderProg);
+                                        shaderProg.aPositionLoc = gl.getAttribLocation(shaderProg, "vPositionAttr");
+                                        shaderProg.modelViewMatrixLoc = gl.getUniformLocation(shaderProg, "modelViewMatrix");
+                                        shaderProg.projectionMatrixLoc = gl.getUniformLocation(shaderProg, "projectionMatrix");
+                                        shaderProg.vColor = gl.getAttribLocation(shaderProg, "vColorAttr");
+                                        shaderProg.vTexCoord = gl.getAttribLocation(shaderProg, "vTexCoord");
+                                        shaderProg.uTexture = gl.getUniformLocation(shaderProg, "textureMap");
+                                        shaderProg.uAngle = gl.getUniformLocation(shaderProg, "uAngle");
+                                        gl.useProgram(null);
+                                    }
+        function setupVertices() {
+            quad(1, 0, 3, 2);
+            quad(2, 3, 7, 6);
+            quad(3, 0, 4, 7);
+            quad(6, 5, 1, 2);
+            quad(4, 5, 6, 7);
+            quad(5, 4, 0, 1);
+        }
+        function quad(a, b, c, d) {
+            vertices[0] = vec3.clone([-0.5, -0.5, 0.5]);
+            vertices[1] = vec3.clone([-0.5, 0.5, 0.5]);
+            vertices[2] = vec3.clone([0.5, 0.5, 0.5]);
+            vertices[3] = vec3.clone([0.5, -0.5, 0.5]);
+            vertices[4] = vec3.clone([-0.5, -0.5, -0.5]);
+            vertices[5] = vec3.clone([-0.5, 0.5, -0.5]);
+            vertices[6] = vec3.clone([0.5, 0.5, -0.5]);
+            vertices[7] = vec3.clone([0.5, -0.5, -0.5]);
+            vertexColors[0] = vec3.clone([0.0, 0.0, 0.0]);// black
+            vertexColors[1] = vec3.clone([1.0, 0.0, 0.0]);// red
+            vertexColors[2] = vec3.clone([1.0, 1.0, 0.0]);// yellow
+            vertexColors[3] = vec3.clone([0.0, 1.0, 0.0]);// green
+            vertexColors[4] = vec3.clone([0.0, 0.0, 1.0]);// blue
+            vertexColors[5] = vec3.clone([1.0, 0.0, 1.0]);// magenta
+            vertexColors[6] = vec3.clone([0.0, 1.0, 1.0]); // cyan
+            vertexColors[7] = vec3.clone([1.0, 1.0, 1.0]);// white
+            texCoord[0] = vec2.clone([0,0]);
+            texCoord[1] = vec2.clone([0,1]);
+            texCoord[2] = vec2.clone([1,1]);
+            texCoord[3] = vec2.clone([0,0]);
+            texCoord[4] = vec2.clone([1,1]);
+            texCoord[5] = vec2.clone([1,0]);
+            var indices = [a, b, c, a, c, d];
+            for (var i = 0; i < indices.length; ++i) {
+                points.push(...vertices[indices[i]]);
+                colors.push(...vertexColors[a]);
+                texCoordsArray.push(...texCoord[i]);
+            }
+        }
+        function setupBuffers() {
+            vertexBuffer = gl.createBuffer();
+            setupVertices();
+            vertexBuffer.itemSize = 3;
+            vertexBuffer.numberOfItems = points.length / 3;
+            colorBuffer = gl.createBuffer();
+            gl.useProgram(shaderProg);
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.aPositionLoc, 3, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+            gl.enableVertexAttribArray(shaderProg.vColor);
+            gl.vertexAttribPointer(shaderProg.vColor, 3, gl.FLOAT, false, 0, 0);
+            textureBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoordsArray), gl.STATIC_DRAW);
+            gl.vertexAttribPointer(shaderProg.vTexCoord, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(shaderProg.vTexCoord);
+            gl.bindVertexArray(null);
+        }
+        function setupTextures() {
+            //gl.activeTexture(gl.TEXTURE0);
+            texImage0 = document.getElementById("texImage0");
+            texImage1 = document.getElementById("texImage1");
+            texImage2 = document.getElementById("texImage2");
+            texImage3 = document.getElementById("texImage3");
+            texImage4 = document.getElementById("texImage4");
+            texImage5 = document.getElementById("texImage5");
+            texImage6 = document.getElementById("texImage6");
+            configureTexture();
+        }
+        function configureTexture() {
+            gl.useProgram(shaderProg);
+            texture = gl.createTexture();
+            gl.bindTexture( gl.TEXTURE_CUBE_MAP, texture );
+            //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.texImage2D( gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, texImage1 );
+            gl.texImage2D( gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, texImage2 );
+            gl.texImage2D( gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, texImage3 );
+            gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, texImage4 );
+            gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, texImage5 );
+            gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, texImage6 );
+            //gl.generateMipmap( TEXTURE_CUBE_MAP );
+            gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.uniform1i(shaderProg.uTexture, 0);
+        }
+        function draw() {
+            //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            //gl.enable(gl.DEPTH_TEST);
+            //gl.depthFunc(gl.LEQUAL);
+            //gl.clearColor(0.7,0.7,0.7,1.0);
+            //gl.clearDepth(1.0);
+            gl.useProgram(shaderProg);
+            gl.bindVertexArray(vertexArray);
+            if (flag) rtheta[axis] += 2.0;
+            gl.uniform3fv(shaderProg.uAngle, rtheta);
+  
+            let modelViewMatrix = mat4.create();
+            let projectionMatrix = mat4.create();
+            let eye = vec3.clone([radius * Math.sin(theta) * Math.cos(phi),
+                                  radius * Math.sin(theta) * Math.sin(phi), radius * Math.cos(theta)]);
+                                  //mat4.lookAt(modelViewMatrix, eye, at, up);
+                                  //mat4.rotate(modelViewMatrix, modelViewMatrix, rtheta[xAxis], [1, 0, 0]);
+                                  //mat4.rotate(modelViewMatrix, modelViewMatrix, rtheta[yAxis], [0, 1, 0]);
+                                  //mat4.rotate(modelViewMatrix, modelViewMatrix, rtheta[zAxis], [0, 0, 1]);
+                                  mat4.ortho(projectionMatrix, left, right, bottom, ytop, near, far);
+                                  gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+                                  gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
+                                  gl.drawArrays(gl.TRIANGLES, 0, 36);
+                                  gl.bindVertexArray(null);
+                                  requestAnimationFrame(draw);
+                                  //gl.useProgram(null);
+        }
+        </script>
+        <script>
+            $(function () {
+              $("#increaseZ-btn").button();
+              $("#increaseZ-btn").click(function () { near *= 1.1; far *= 1.1; });
+              $("#decreaseZ-btn").button();
+              $("#decreaseZ-btn").click(function () { near *= 0.9; far *= 0.9; });
+              $("#increaseRadius-btn").button();
+              $("#increaseRadius-btn").click(function () { radiuseye *= 1.1; });
+              $("#decreaseRadius-btn").button();
+              $("#decreaseRadius-btn").click(function () { radiuseye *= 0.9; });
+              $("#increaseTheta-btn").button();
+              $("#increaseTheta-btn").click(function () { theta += dr; });
+              $("#decreaseTheta-btn").button();
+              $("#decreaseTheta-btn").click(function () { theta -= dr; });
+              $("#increasePhi-btn").button();
+              $("#increasePhi-btn").click(function () { phi += dr; });
+              $("#decreasePhi-btn").button();
+              $("#decreasePhi-btn").click(function () { phi -= dr; });
+              $('#rotatex-btn').button();
+              $('#rotatex-btn').click(
+                                      function () {
+                                      if ($('#rotatex-btn:checked').val() == null) {
+                                      }
+                                      else {
+                                      axis = xAxis;
+                                      }
+                                      });
+              $('#rotatey-btn').button();
+              $('#rotatey-btn').click(
+                                      function () {
+                                      if ($('#rotatey-btn:checked').val() == null) {
+                                      }
+                                      else {
+                                      axis = yAxis;
+                                      }
+                                      });
+              $('#rotatez-btn').button();
+              $('#rotatez-btn').click(
+                                      function () {
+                                      if ($('#rotatez-btn:checked').val() == null) {
+                                      }
+                                      else {
+                                      axis = zAxis;
+                                      }
+                                      });
+              $('#rotatet-btn').button();
+              $('#rotatet-btn').click(
+                                      function () {
+                                      if ($('#rotatet-btn:checked').val() == null) {
+                                      }
+                                      else {
+                                      flag = !flag;
+                                      }
+                                      });
+              });
+            </script>
+    </head>
+    <body>
+        <canvas id="myGLCanvas"></canvas>
+        <div id="overlay">
+            cube mapping
+            <p />
+            <button id="increaseZ-btn">Increase Z</button>
+            <button id="decreaseZ-btn">Decrease Z</button>
+            <button id="increaseRadius-btn">Increase R</button>
+            <button id="decreaseRadius-btn">Decrease R</button>
+            <p> </p>
+            <button id="increaseTheta-btn">Increase theta</button>
+            <button id="decreaseTheta-btn">Decrease theta</button>
+            <button id="increasePhi-btn">Increase phi</button>
+            <button id="decreasePhi-btn">Decrease phi</button>
+            <p/>
+            <table>
+                <tr>
+                    <td><label id='lblrotatex' for='rotatex-btn'>Rotate X</label><input id='rotatex-btn' type='checkbox' /></td>
+                    <td><label id='lblrotatey' for='rotatey-btn'>Rotate Y</label><input id='rotatey-btn' type='checkbox' /></td>
+                    <td><label id='lblrotatez' for='rotatez-btn'>Rotate Z</label><input id='rotatez-btn' type='checkbox' /></td>
+                    <td><label id='lblrotatet' for='rotatet-btn'>Toggle Rotation</label><input id='rotatet-btn' type='checkbox' /></td>
+                </tr>
+            </table>
+            
+        </div>
+        <img id="texImage0" src="webgl.png" style="display:none" crossorigin="anonymous">
+        
+        <img id="texImage1" src="polarbear.jpg" style="display:none" crossorigin="anonymous">
+            <img id="texImage2" src="gingerhouse.jpg" style="display:none" crossorigin="anonymous">
+                <img id="texImage3" src="indigokids.jpg" style="display:none" crossorigin="anonymous">
+                    <img id="texImage4" src="peanut.jpg" style="display:none" crossorigin="anonymous">
+                        <img id="texImage5" src="mcdonald.jpg" style="display:none" crossorigin="anonymous">
+                            <img id="texImage6" src="donuts.jpg" style="display:none" crossorigin="anonymous">
+                                <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+                                    in vec3 vPositionAttr;
+                                    in vec3 vColorAttr;
+                                    out vec4 vColor;
+                                    in vec2 vTexCoord;
+                                    out vec3 fTexCoord;
+                                    uniform mat4 modelViewMatrix;
+                                    uniform mat4 projectionMatrix;
+                                    uniform vec3 uAngle;
+                                    void main(void){
+                                        vec3 angles = radians( uAngle );
+                                        vec3 c = cos( angles );
+                                        vec3 s = sin( angles );
+                                        // Remeber: thse matrices are column-major
+                                        mat4 rx = mat4( 1.0,  0.0,  0.0, 0.0,
+                                                       0.0,  c.x,  s.x, 0.0,
+                                                       0.0, -s.x,  c.x, 0.0,
+                                                       0.0,  0.0,  0.0, 1.0 );
+                                        mat4 ry = mat4( c.y, 0.0, -s.y, 0.0,
+                                                                      0.0, 1.0,  0.0, 0.0,
+                                                                      s.y, 0.0,  c.y, 0.0,
+                                                                      0.0, 0.0,  0.0, 1.0 );
+                                        mat4 rz = mat4( c.z, s.z, 0.0, 0.0,
+                                                                                     -s.z,  c.z, 0.0, 0.0,
+                                                                                     0.0,  0.0, 1.0, 0.0,
+                                                                                     0.0,  0.0, 0.0, 1.0 );
+                          gl_Position = projectionMatrix * modelViewMatrix *  rz * ry * rx * vec4(vPositionAttr, 1.0);
+                          gl_Position.z = -gl_Position.z;
+                          vColor = vec4(vColorAttr, 1.0);
+                          vec3 eyePos = (modelViewMatrix *  rz * ry * rx * vec4(vPositionAttr, 1.0)).xyz;
+                          //fTexCoord = (rz * ry * rx  * vec4(vPositionAttr, 1.0)).xyz;
+                          //fTexCoord.z = -fTexCoord.z;
+                          fTexCoord = vPositionAttr;
+                                    }
+                                </script>
+                                <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+                                    precision highp float;
+                                    in vec4 vColor;
+                                    out vec4 finalColor;
+                                    in  vec3 fTexCoord;
+                                    //uniform sampler2D textureMap;
+                                    uniform samplerCube textureMap;
+                                    void main()
+                                    {
+                                        vec4 color2 = texture( textureMap, fTexCoord );
+                                        finalColor = color2;
+                                        //finalColor = vec4(1.0,0.0,0.0, 1.0); //to test if your model is ok
+                                    }
+                                </script>
+    </body>
+</html>
