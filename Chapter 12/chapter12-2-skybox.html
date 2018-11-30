@@ -209,7 +209,7 @@
             //gl.clearDepth(1.0);
             gl.useProgram(shaderProg);
             gl.bindVertexArray(vertexArray);
-            //if (flag) rtheta[axis] += 0.05;
+            if (flag) rtheta[axis] += 0.05;
             gl.uniform3fv(shaderProg.uAngle, rtheta);
   
             let modelViewMatrix = mat4.create();
