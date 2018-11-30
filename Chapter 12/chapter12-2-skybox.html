@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>skybox</title>
+        <title>environment mapping</title>
         <style>
             #overlay {
                 background-color: rgba(0, 0, 0, 0.7);
@@ -67,8 +67,8 @@
                                     setupShaders();
                                     setupTextures();
                                     setupBuffers();
-                                    //gRLoop = new RenderLoop(draw,5).start();
-                                    draw();
+                                    gRLoop = new RenderLoop(draw,5).start();
+                                    //draw();
                                     });
                                     function setupShaders() {
                                         shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
@@ -202,16 +202,16 @@
             gl.uniform1i(shaderProg.uTexture, 0);
         }
         function draw() {
-            //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            //gl.enable(gl.DEPTH_TEST);
-            //gl.depthFunc(gl.LEQUAL);
-            //gl.clearColor(0.7,0.7,0.7,1.0);
-            //gl.clearDepth(1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.disable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.clearColor(0.7,0.7,0.7,1.0);
+            gl.clearDepth(1.0);
             gl.useProgram(shaderProg);
             gl.bindVertexArray(vertexArray);
             if (flag) rtheta[axis] += 0.05;
             gl.uniform3fv(shaderProg.uAngle, rtheta);
-  
+            
             let modelViewMatrix = mat4.create();
             let projectionMatrix = mat4.create();
             let normalMatrix = mat4.create();
@@ -231,8 +231,7 @@
                                   
                                   gl.drawArrays(gl.TRIANGLES, 0, 36);
                                   gl.bindVertexArray(null);
-                                  requestAnimationFrame(draw);
-                                  //gl.useProgram(null);
+                                  gl.useProgram(null);
         }
         </script>
         <script>
@@ -319,12 +318,12 @@
         </div>
         
         <img id="topImage" src="top.jpg" style="display:none" crossorigin="anonymous">
-        <img id="bottomImage" src="bottom.jpg" style="display:none" crossorigin="anonymous">
-        <img id="leftImage" src="left.jpg" style="display:none" crossorigin="anonymous">
-        <img id="rightImage" src="right.jpg" style="display:none" crossorigin="anonymous">
-        <img id="frontImage" src="front.jpg" style="display:none" crossorigin="anonymous">
-        <img id="backImage" src="back.jpg" style="display:none" crossorigin="anonymous">
-        <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+            <img id="bottomImage" src="bottom.jpg" style="display:none" crossorigin="anonymous">
+                <img id="leftImage" src="left.jpg" style="display:none" crossorigin="anonymous">
+                    <img id="rightImage" src="right.jpg" style="display:none" crossorigin="anonymous">
+                        <img id="frontImage" src="front.jpg" style="display:none" crossorigin="anonymous">
+                            <img id="backImage" src="back.jpg" style="display:none" crossorigin="anonymous">
+                                <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
                                     in vec3 vPositionAttr;
                                     in vec3 vColorAttr;
                                     out vec4 vColor;
@@ -337,33 +336,18 @@
                                     uniform mat4 normalMatrix;
                                     out vec3 R;
                                     void main(void){
-                                        vec3 angles = radians( uAngle );
-                                        vec3 c = cos( angles );
-                                        vec3 s = sin( angles );
-                                        // Remeber: thse matrices are column-major
-                                        mat4 rx = mat4( 1.0,  0.0,  0.0, 0.0,
-                                                       0.0,  c.x,  s.x, 0.0,
-                                                       0.0, -s.x,  c.x, 0.0,
-                                                       0.0,  0.0,  0.0, 1.0 );
-                                        mat4 ry = mat4( c.y, 0.0, -s.y, 0.0,
-                                                       0.0, 1.0,  0.0, 0.0,
-                                                       s.y, 0.0,  c.y, 0.0,
-                                                       0.0, 0.0,  0.0, 1.0 );
-                                        mat4 rz = mat4( c.z, s.z, 0.0, 0.0,
-                                                       -s.z,  c.z, 0.0, 0.0,
-                                                       0.0,  0.0, 1.0, 0.0,
-                                                       0.0,  0.0, 0.0, 1.0 );
-                          gl_Position = projectionMatrix * modelViewMatrix * vec4(vPositionAttr, 1.0);
-                          gl_Position.z = -gl_Position.z;
-                          vColor = vec4(vColorAttr, 1.0);
-
-                          // pos is vertex position in eye coordinates
-                          vec3 pos = (modelViewMatrix  * vec4(vPositionAttr, 1.0)).xyz;
-    
-                          //Transformed normal position
-                          vec3 N = normalize((normalMatrix * vNormalAttr).xyz);
-                          R = reflect(normalize(pos), N);
-                          fTexCoord = R;
+                                        
+                                        gl_Position = projectionMatrix * modelViewMatrix * vec4(vPositionAttr, 1.0);
+                                        gl_Position.z = -gl_Position.z;
+                                        vColor = vec4(vColorAttr, 1.0);
+                                        
+                                        // pos is vertex position in eye coordinates
+                                        vec3 pos = (modelViewMatrix  * vec4(vPositionAttr, 1.0)).xyz;
+                                        
+                                        //Transformed normal position
+                                        vec3 N = normalize((normalMatrix * vNormalAttr).xyz);
+                                        R = reflect(normalize(pos), N);
+                                        fTexCoord = R;
                                     }
                                 </script>
                                 <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
@@ -378,5 +362,6 @@
                                         //finalColor = vec4(1.0,0.0,0.0, 1.0); //to test if your model is ok
                                     }
                                 </script>
-    </body>
+                                </body>
 </html>
+
