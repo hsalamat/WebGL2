@@ -173,7 +173,7 @@
             gl.bindVertexArray(null);
         }
         function setupTextures() {
-            //gl.activeTexture(gl.TEXTURE0);
+            gl.activeTexture(gl.TEXTURE0);
             rightImage = document.getElementById("rightImage");
             topImage = document.getElementById("topImage");
             frontImage = document.getElementById("frontImage");
@@ -194,9 +194,9 @@
             gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, bottomImage );
             gl.texImage2D( gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA,gl.RGBA, gl.UNSIGNED_BYTE, backImage );
             //gl.generateMipmap( TEXTURE_CUBE_MAP );
-            //gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            //gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            //gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
             gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
             gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
             gl.uniform1i(shaderProg.uTexture, 0);
@@ -318,12 +318,12 @@
             
         </div>
         
-        <img id="topImage" src="top.png" style="display:none" crossorigin="anonymous">
-        <img id="bottomImage" src="bottom.png" style="display:none" crossorigin="anonymous">
-        <img id="leftImage" src="left.png" style="display:none" crossorigin="anonymous">
-        <img id="rightImage" src="right.png" style="display:none" crossorigin="anonymous">
-        <img id="frontImage" src="front.png" style="display:none" crossorigin="anonymous">
-        <img id="backImage" src="back.png" style="display:none" crossorigin="anonymous">
+        <img id="topImage" src="top.jpg" style="display:none" crossorigin="anonymous">
+        <img id="bottomImage" src="bottom.jpg" style="display:none" crossorigin="anonymous">
+        <img id="leftImage" src="left.jpg" style="display:none" crossorigin="anonymous">
+        <img id="rightImage" src="right.jpg" style="display:none" crossorigin="anonymous">
+        <img id="frontImage" src="front.jpg" style="display:none" crossorigin="anonymous">
+        <img id="backImage" src="back.jpg" style="display:none" crossorigin="anonymous">
         <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
                                     in vec3 vPositionAttr;
                                     in vec3 vColorAttr;
