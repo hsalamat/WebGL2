@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title> Multitexturing</title>
+        <title> Bump mapping</title>
         <style>
             #overlay {
                 background-color: rgba(0, 0, 0, 0.7);
@@ -18,6 +18,7 @@
         <script src="Common/js/shaders.js"></script>
         <script src="Common/js/gl-matrix.js"></script>
         <script src="Common/js/RenderLoop.js"></script>
+        <script src="Common/models/rawdata.js"></script>
         <script src="Common/js/jquery-3.3.1.min.js"></script>
         <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
         <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
@@ -31,40 +32,39 @@
             var vertexArray;
             var vertexBuffer;
             var shaderProg;
-
             var points = [];
             var vertices = [];
             var rLoop;
             var modelViewMatrix = mat4.create();
             var projectionMatrix = mat4.create();
-
             const at = vec3.clone([0.0, 0.0, 0.0]);
             const up = vec3.clone([0.0, 1.0, 0.0]);
-
             //var theta = 10.0 * Math.PI / 180.0;
             var theta = 0.0;
             var phi = 0.0;
             var dr = 5.0 * Math.PI / 180.0;
-    
+            
             var normalsArray = [];
             var normalBuffer;
             var normalMatrix = mat4.create();
- 
+            
             var textureBuffer;
             var texCoordsArray = [];
             var texCoord = [];
             var texture;
             var texSize = 256;
             var normal = [0.0, 1.0, 0.0, 0.0];
+            var normals = [];
             var tangent = [1.0, 0.0, 0.0];
             
             var diffuseProduct = [0.7, 0.7, 0.7, 1.0];
             var lightPosition = [0.0, 2.0, 0.0, 1.0];
-          
+            
             window.addEventListener("load", function () {
                                     gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
                                     gl.enable(gl.DEPTH_TEST);
                                     setupShaders();
+                                    setupVertices();
                                     setupLights();
                                     setupTextures();
                                     setupBuffers();
@@ -82,22 +82,16 @@
                                         shaderProg.normalMatrix = gl.getUniformLocation(shaderProg, "normalMatrix");
                                         shaderProg.modelViewMatrix = gl.getUniformLocation(shaderProg, "modelViewMatrix");
                                         shaderProg.projectionMatrix = gl.getUniformLocation(shaderProg, "projectionMatrix");
+                                        shaderProg.uTexture = gl.getUniformLocation(shaderProg, "texMap");
                                         
                                         gl.useProgram(null);
-                                        shaderProg2 = ShaderUtil.domShaderProgram(gl, "vertex_shader2", "fragment_shader2", true);
-                                        gl.useProgram(shaderProg2);
-                                        shaderProg2.aPositionLoc = gl.getAttribLocation(shaderProg2, "a_position");
-                                        shaderProg2.vColor = gl.getAttribLocation(shaderProg2, "vColorAttr");
-                                        shaderProg2.modelViewMatrixLoc = gl.getUniformLocation(shaderProg2, "modelViewMatrix");
-                                        shaderProg2.projectionMatrixLoc = gl.getUniformLocation(shaderProg2, "projectionMatrix");
-                                        gl.useProgram(null);
+                                        
                                     }
-
         function setupVertices() {
-            vertices[0] = vec3.clone([-1.0, -1.0, 1.0, 1.0]);
-            vertices[1] = vec3.clone([-1.0, 1.0, 1.0, 1.0]);
-            vertices[2] = vec3.clone([1.0, 1.0, 1.0, 1.0]);
-            vertices[3] = vec3.clone([1.0, -1.0, 1.0, 1.0]);
+            vertices[0] = vec4.clone([-1.0, -1.0, 1.0, 1.0]);
+            vertices[1] = vec4.clone([-1.0, 1.0, 1.0, 1.0]);
+            vertices[2] = vec4.clone([1.0, 1.0, 1.0, 1.0]);
+            vertices[3] = vec4.clone([1.0, -1.0, 1.0, 1.0]);
             
             texCoord[0] = vec2.clone([0, 0]);
             texCoord[1] = vec2.clone([0, 1]);
@@ -105,7 +99,7 @@
             texCoord[3] = vec2.clone([0, 0]);
             
             for (var i = 0; i < 4; ++i) {
-                points.push(...vertices[indices[i]]);
+                points.push(...vertices[i]);
                 texCoordsArray.push(...texCoord[i]);
             }
             
@@ -140,7 +134,7 @@
             
             // Normal Texture Array
             
-            var normals = new Uint8Array(3*texSize*texSize);
+            normals = new Uint8Array(3*texSize*texSize);
             
             for ( var i = 0; i < texSize; i++ )
             for ( var j = 0; j < texSize; j++ )
@@ -148,7 +142,6 @@
             normals[3*texSize*i+3*j+k] = 255*normalst[i][j][k];
             
         }
-
         
         function setupBuffers() {
             gl.useProgram(shaderProg);
@@ -156,9 +149,9 @@
             gl.bindVertexArray(vertexArray);
             vertexBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            setupVertices();
+          
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
-            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.enableVertexAttribArray(shaderProg.vPosition);
             gl.vertexAttribPointer(shaderProg.vPosition, 4, gl.FLOAT, false, 0, 0);
             
             
@@ -175,61 +168,57 @@
         function setupTextures() {
             configureTexture(normals);
         }
-
         function configureTexture( image ) {
             var texture = gl.createTexture();
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, texSize, texSize, 0, gl.RGB, gl.UNSIGNED_BYTE, image);
             gl.generateMipmap(gl.TEXTURE_2D);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
                              gl.NEAREST_MIPMAP_LINEAR);
                              gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                             gl.uniform1i(shaderProg.uTexture, 0);
         }
         
         function setupLights() {
             gl.useProgram(shaderProg);
- 
+            
             gl.uniform4fv(shaderProg.diffuseProduct, diffuseProduct);
             gl.uniform4fv(shaderProg.normal, normal);
             gl.uniform3fv(shaderProg.objTangent, tangent);
-
         }
         function draw() {
             gl.fClear();
             gl.useProgram(shaderProg);
             gl.bindVertexArray(vertexArray);
-  
-  lightPosition[1] = 2.0 * Math.cos(theta);
-  
-  gl.uniform4fv(program.lightPosition, flatten(lightPosition));
-  gl.uniform4fv(shaderProg.lightPosition, lightPosition);
+            
+            lightPosition[1] = 2.0 * Math.cos(theta);
+            
+            gl.uniform4fv(shaderProg.lightPosition, lightPosition);
             gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             modelViewMatrix = mat4.create();
             normalMatrix = mat4.create();
-            let eye = vec3.clone(2.0, 3.0*(1.0+Math.cos(phi)) , 2.0]);
-             mat4.lookAt(modelViewMatrix, eye, at, up);
-             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
-             mat4.invert(normalMatrix, modelViewMatrix);
-              gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
-              gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
+            let eye = vec3.clone([2.0, 3.0*(1.0+Math.cos(phi)) , 2.0]);
+            mat4.lookAt(modelViewMatrix, eye, at, up);
+            gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+            mat4.invert(normalMatrix, modelViewMatrix);
+            gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
+            gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
             
-             mat4.invert(normalMatrix, modelViewMatrix);
-             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
-             gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
-                                  
-             gl.drawArrays( gl.TRIANGLE_STRIP, 0, 4 );
-              
-             gl.bindVertexArray(null);
-             gl.useProgram(null);
-                                
+            mat4.invert(normalMatrix, modelViewMatrix);
+            gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+            gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
+            
+            gl.drawArrays( gl.TRIANGLE_STRIP, 0, 4 );
+            
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+            
+        
         }
-
-       
-        }
-        </script>
+            </script>
         
         <script>
             $(function () {
@@ -242,8 +231,9 @@
               $("#increasePhi-btn").click(function () { phi += dr; });
               $("#decreasePhi-btn").button();
               $("#decreasePhi-btn").click(function () { phi -= dr; });
-             
-            </script>
+              });
+              
+              </script>
         
     </head>
     <body>
@@ -251,10 +241,9 @@
             Bump. X-axis: Red, Y-axis: Green, Z-axis: Blue
             <p />
             
-        
+            
             <div>
-   
-
+                
                 <button id="increaseTheta-btn">Increase theta</button>
                 <button id="decreaseTheta-btn">Decrease theta</button>
                 <button id="increasePhi-btn">Increase phi</button>
@@ -267,21 +256,20 @@
         </div>
         
         <div>
-   
+            
             <canvas id="myGLCanvas"></canvas>
         </div>
         
         <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
-            in vec3 vPosition;
+            in vec4 vPosition;
             out vec3 L; /* light vector in texture-space coordinates */
             out vec3 V; /* view vector in texture-space coordinates */
             
             uniform mat4 modelViewMatrix;
             uniform mat4 projectionMatrix;
-            uniform vec4 vNormalAttr;
+            uniform vec4 normal;
             uniform vec4 lightPosition;
             uniform mat4 normalMatrix;
-
             in vec2 vTexCoord;
             out vec2 fTexCoord;
             uniform vec3 objTangent; /* tangent vector in object coordinates */
@@ -327,10 +315,10 @@
             in vec3 V;
             
             in  vec2 fTexCoord;
-            uniform sampler2D textureMap;
-  
+            uniform sampler2D texMap;
+            
             void main(void) {
-                vec4 N = texture2D(texMap, fTexCoord);
+                vec4 N = texture(texMap, fTexCoord);
                 vec3 NN =  normalize(2.0*N.xyz-1.0);
                 vec3 LL = normalize(L);
                 float Kd = max(dot(NN, LL), 0.0);
