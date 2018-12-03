@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title> Multitexturing</title>
+        <style>
+            #overlay {
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                font-family: monospace;
+                padding: 1em;
+                border-radius: 1em;
+                border: 1px solid #f00;
+                text-shadow: 0px 0px 1px white;
+            }
+        </style>
+        
+        <script src="Common/js/gl.js"></script>
+        <script src="Common/js/shaders.js"></script>
+        <script src="Common/js/gl-matrix.js"></script>
+        <script src="Common/js/RenderLoop.js"></script>
+        <script src="Common/js/jquery-3.3.1.min.js"></script>
+        <script src="Common/js/jquery-ui-1.12.1/jquery-ui.js"></script>
+        <link href='Common/js/jquery-ui-1.12.1/jquery-ui.min.css' type='text/css' rel='stylesheet' />
+        <script type='text/javascript' src='Common/js/colorpicker.js'></script>
+        <link href='Common/css/style.css' type='text/css' rel='stylesheet' />
+        <link href='Common/css/colorpicker.css' type='text/css' rel='stylesheet' />
+        
+        <script>
+            "use strict"
+            var gl;
+            var vertexArray;
+            var vertexBuffer;
+            var shaderProg;
+
+            var points = [];
+            var vertices = [];
+            var rLoop;
+            var modelViewMatrix = mat4.create();
+            var projectionMatrix = mat4.create();
+
+            const at = vec3.clone([0.0, 0.0, 0.0]);
+            const up = vec3.clone([0.0, 1.0, 0.0]);
+
+            //var theta = 10.0 * Math.PI / 180.0;
+            var theta = 0.0;
+            var phi = 0.0;
+            var dr = 5.0 * Math.PI / 180.0;
+    
+            var normalsArray = [];
+            var normalBuffer;
+            var normalMatrix = mat4.create();
+ 
+            var textureBuffer;
+            var texCoordsArray = [];
+            var texCoord = [];
+            var texture;
+            var texSize = 256;
+            var normal = [0.0, 1.0, 0.0, 0.0];
+            var tangent = [1.0, 0.0, 0.0];
+            
+            var diffuseProduct = [0.7, 0.7, 0.7, 1.0];
+            var lightPosition = [0.0, 2.0, 0.0, 1.0];
+          
+            window.addEventListener("load", function () {
+                                    gl = GLInstance("myGLCanvas").fSetSize(500, 500).fClear();
+                                    gl.enable(gl.DEPTH_TEST);
+                                    setupShaders();
+                                    setupLights();
+                                    setupTextures();
+                                    setupBuffers();
+                                    rLoop = new RenderLoop(draw).start();
+                                    });
+                                    function setupShaders() {
+                                        shaderProg = ShaderUtil.domShaderProgram(gl, "vertex_shader", "fragment_shader", true);
+                                        gl.useProgram(shaderProg);
+                                        shaderProg.vPosition = gl.getAttribLocation(shaderProg, "vPosition");
+                                        shaderProg.vTexCoord = gl.getAttribLocation(shaderProg, "vTexCoord");
+                                        shaderProg.normal = gl.getUniformLocation(shaderProg, "normal");
+                                        shaderProg.lightPosition = gl.getUniformLocation(shaderProg, "lightPosition");
+                                        shaderProg.diffuseProduct = gl.getUniformLocation(shaderProg, "diffuseProduct");
+                                        shaderProg.objTangent = gl.getUniformLocation(shaderProg, "objTangent");
+                                        shaderProg.normalMatrix = gl.getUniformLocation(shaderProg, "normalMatrix");
+                                        shaderProg.modelViewMatrix = gl.getUniformLocation(shaderProg, "modelViewMatrix");
+                                        shaderProg.projectionMatrix = gl.getUniformLocation(shaderProg, "projectionMatrix");
+                                        
+                                        gl.useProgram(null);
+                                        shaderProg2 = ShaderUtil.domShaderProgram(gl, "vertex_shader2", "fragment_shader2", true);
+                                        gl.useProgram(shaderProg2);
+                                        shaderProg2.aPositionLoc = gl.getAttribLocation(shaderProg2, "a_position");
+                                        shaderProg2.vColor = gl.getAttribLocation(shaderProg2, "vColorAttr");
+                                        shaderProg2.modelViewMatrixLoc = gl.getUniformLocation(shaderProg2, "modelViewMatrix");
+                                        shaderProg2.projectionMatrixLoc = gl.getUniformLocation(shaderProg2, "projectionMatrix");
+                                        gl.useProgram(null);
+                                    }
+
+        function setupVertices() {
+            vertices[0] = vec3.clone([-1.0, -1.0, 1.0, 1.0]);
+            vertices[1] = vec3.clone([-1.0, 1.0, 1.0, 1.0]);
+            vertices[2] = vec3.clone([1.0, 1.0, 1.0, 1.0]);
+            vertices[3] = vec3.clone([1.0, -1.0, 1.0, 1.0]);
+            
+            texCoord[0] = vec2.clone([0, 0]);
+            texCoord[1] = vec2.clone([0, 1]);
+            texCoord[2] = vec2.clone([1, 1]);
+            texCoord[3] = vec2.clone([0, 0]);
+            
+            for (var i = 0; i < 4; ++i) {
+                points.push(...vertices[indices[i]]);
+                texCoordsArray.push(...texCoord[i]);
+            }
+            
+            // Bump Data
+            
+            var data = new Array()
+            for (var i = 0; i<= texSize; i++)  data[i] = new Array();
+            for (var i = 0; i<= texSize; i++) for (var j=0; j<=texSize; j++)
+            data[i][j] = rawData[i*256+j];
+            
+            
+            // Bump Map Normals
+            
+            var normalst = new Array()
+            for (var i=0; i<texSize; i++)  normalst[i] = new Array();
+            for (var i=0; i<texSize; i++) for ( var j = 0; j < texSize; j++)
+            normalst[i][j] = new Array();
+            for (var i=0; i<texSize; i++) for ( var j = 0; j < texSize; j++) {
+                normalst[i][j][0] = data[i][j]-data[i+1][j];
+                normalst[i][j][1] = data[i][j]-data[i][j+1];
+                normalst[i][j][2] = 1;
+            }
+            
+            // Scale to Texture Coordinates
+            
+            for (var i=0; i<texSize; i++) for (var j=0; j<texSize; j++) {
+                var d = 0;
+                for(k=0;k<3;k++) d+=normalst[i][j][k]*normalst[i][j][k];
+                d = Math.sqrt(d);
+                for(k=0;k<3;k++) normalst[i][j][k]= 0.5*normalst[i][j][k]/d + 0.5;
+            }
+            
+            // Normal Texture Array
+            
+            var normals = new Uint8Array(3*texSize*texSize);
+            
+            for ( var i = 0; i < texSize; i++ )
+            for ( var j = 0; j < texSize; j++ )
+            for(var k =0; k<3; k++)
+            normals[3*texSize*i+3*j+k] = 255*normalst[i][j][k];
+            
+        }
+
+        
+        function setupBuffers() {
+            gl.useProgram(shaderProg);
+            vertexArray = gl.createVertexArray();
+            gl.bindVertexArray(vertexArray);
+            vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            setupVertices();
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
+            gl.enableVertexAttribArray(shaderProg.aPositionLoc);
+            gl.vertexAttribPointer(shaderProg.vPosition, 4, gl.FLOAT, false, 0, 0);
+            
+            
+            textureBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoordsArray), gl.STATIC_DRAW);
+            gl.vertexAttribPointer(shaderProg.vTexCoord, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(shaderProg.vTexCoord);
+            gl.bindVertexArray(null);
+            gl.useProgram(null);
+            
+            
+        }
+        function setupTextures() {
+            configureTexture(normals);
+        }
+
+        function configureTexture( image ) {
+            var texture = gl.createTexture();
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, texSize, texSize, 0, gl.RGB, gl.UNSIGNED_BYTE, image);
+            gl.generateMipmap(gl.TEXTURE_2D);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+                             gl.NEAREST_MIPMAP_LINEAR);
+                             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        }
+        
+        function setupLights() {
+            gl.useProgram(shaderProg);
+ 
+            gl.uniform4fv(shaderProg.diffuseProduct, diffuseProduct);
+            gl.uniform4fv(shaderProg.normal, normal);
+            gl.uniform3fv(shaderProg.objTangent, tangent);
+
+        }
+        function draw() {
+            gl.fClear();
+            gl.useProgram(shaderProg);
+            gl.bindVertexArray(vertexArray);
+  
+  lightPosition[1] = 2.0 * Math.cos(theta);
+  
+  gl.uniform4fv(program.lightPosition, flatten(lightPosition));
+  gl.uniform4fv(shaderProg.lightPosition, lightPosition);
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            modelViewMatrix = mat4.create();
+            normalMatrix = mat4.create();
+            let eye = vec3.clone(2.0, 3.0*(1.0+Math.cos(phi)) , 2.0]);
+             mat4.lookAt(modelViewMatrix, eye, at, up);
+             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+             mat4.invert(normalMatrix, modelViewMatrix);
+              gl.uniformMatrix4fv(shaderProg.projectionMatrixLoc, false, projectionMatrix);
+              gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
+            
+             mat4.invert(normalMatrix, modelViewMatrix);
+             gl.uniformMatrix4fv(shaderProg.modelViewMatrixLoc, false, modelViewMatrix);
+             gl.uniformMatrix4fv(shaderProg.normalMatrixLoc, true, normalMatrix);
+                                  
+             gl.drawArrays( gl.TRIANGLE_STRIP, 0, 4 );
+              
+             gl.bindVertexArray(null);
+             gl.useProgram(null);
+                                
+        }
+
+       
+        }
+        </script>
+        
+        <script>
+            $(function () {
+              
+              $("#increaseTheta-btn").button();
+              $("#increaseTheta-btn").click(function () { theta += dr; });
+              $("#decreaseTheta-btn").button();
+              $("#decreaseTheta-btn").click(function () { theta -= dr; });
+              $("#increasePhi-btn").button();
+              $("#increasePhi-btn").click(function () { phi += dr; });
+              $("#decreasePhi-btn").button();
+              $("#decreasePhi-btn").click(function () { phi -= dr; });
+             
+            </script>
+        
+    </head>
+    <body>
+        <div id="overlay">
+            Bump. X-axis: Red, Y-axis: Green, Z-axis: Blue
+            <p />
+            
+        
+            <div>
+   
+
+                <button id="increaseTheta-btn">Increase theta</button>
+                <button id="decreaseTheta-btn">Decrease theta</button>
+                <button id="increasePhi-btn">Increase phi</button>
+                <button id="decreasePhi-btn">Decrease phi</button>
+                
+            </div>
+            <p></p>
+            
+        </div>
+        </div>
+        
+        <div>
+   
+            <canvas id="myGLCanvas"></canvas>
+        </div>
+        
+        <script id="vertex_shader" type="x-shader/x-vertex">#version 300 es
+            in vec3 vPosition;
+            out vec3 L; /* light vector in texture-space coordinates */
+            out vec3 V; /* view vector in texture-space coordinates */
+            
+            uniform mat4 modelViewMatrix;
+            uniform mat4 projectionMatrix;
+            uniform vec4 vNormalAttr;
+            uniform vec4 lightPosition;
+            uniform mat4 normalMatrix;
+
+            in vec2 vTexCoord;
+            out vec2 fTexCoord;
+            uniform vec3 objTangent; /* tangent vector in object coordinates */
+            
+            void main(void){
+                gl_Position = projectionMatrix*modelViewMatrix*vPosition;
+                
+                fTexCoord = vTexCoord;
+                
+                vec3 eyePosition = (modelViewMatrix*vPosition).xyz;
+                vec3 eyeLightPos = (modelViewMatrix*lightPosition).xyz;
+                
+                /* normal, tangent and binormal in eye coordinates */
+                
+                vec3 N = normalize((normalMatrix*normal).xyz);
+                vec3 T  = normalize((normalMatrix* vec4(objTangent, 1.0)).xyz);
+                vec3 B = cross(N, T);
+                
+                /* light vector in texture space */
+                
+                L.x = dot(T, eyeLightPos-eyePosition);
+                L.y = dot(B, eyeLightPos-eyePosition);
+                L.z = dot(N, eyeLightPos-eyePosition);
+                
+                L = normalize(L);
+                
+                /* view vector in texture space */
+                
+                V.x = dot(T, -eyePosition);
+                V.y = dot(B, -eyePosition);
+                V.z = dot(N, -eyePosition);
+                
+                V = normalize(V);
+                
+            }
+        </script>
+        <script id="fragment_shader" type="x-shader/x-fragment">#version 300 es
+            precision mediump float;
+            out vec4 finalColor;
+            uniform vec4 diffuseProduct;
+            
+            in vec3 L;
+            in vec3 V;
+            
+            in  vec2 fTexCoord;
+            uniform sampler2D textureMap;
+  
+            void main(void) {
+                vec4 N = texture2D(texMap, fTexCoord);
+                vec3 NN =  normalize(2.0*N.xyz-1.0);
+                vec3 LL = normalize(L);
+                float Kd = max(dot(NN, LL), 0.0);
+                vec4 ambient = vec4(0.2, 0.2, 0.2, 0.0);
+                finalColor = ambient + vec4(Kd*diffuseProduct.xyz, 1.0);
+            }
+        </script>
+        
+    </body>
+</html>
