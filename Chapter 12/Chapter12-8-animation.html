@@ -154,7 +154,7 @@
             texture = gl.createTexture();
             var image = document.getElementById("animationImage");
             gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture);
-            const levels = 7;
+            const levels = 1;
             const width = 125;
             const height = 125;
             const depth = 16;
@@ -175,7 +175,7 @@
             gl.useProgram(null);
         }
 
-        function texImageBySlice(gl, target, level,sliceWidth, sliceHeight, format, type, image) {
+        function texImageBySlice(gl, target, level, sliceWidth, sliceHeight, format, type, image) {
             const slicesAcross = image.width / sliceWidth;
             const slicesDown = image.height / sliceHeight;
 
@@ -194,9 +194,10 @@
 
                     gl.texSubImage3D(target, level, 0, 0, depth,
                         sliceWidth, sliceHeight, 1,
-                        format, type, img);
+                        format, type, image);
                 }
             }
+        }
 
         function draw() {
             gl.useProgram(shaderProg);
