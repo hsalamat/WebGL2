@@ -41,7 +41,8 @@
         var NUM_IMAGES = 16;
         var IMAGE_SIZE = {
             width: 500,
-            height: 500
+            height: 500,
+            depth: 16
         };
 
         window.addEventListener("load", function () {
@@ -113,64 +114,21 @@
         }
 
 
-        function setupTextures1() {
-            gl.useProgram(shaderProg);
-
-         // use canvas to get the pixel data array of the image
-         var animationCanvas = document.createElement('canvas');
-         animationCanvas.width = IMAGE_SIZE.width;
-         animationCanvas.height = IMAGE_SIZE.height * NUM_IMAGES;
-         var ctx = animationCanvas.getContext('2d');
-         var image = document.getElementById("animationImage");
-         ctx.drawImage(image, 0, 0);
-         var imageData = ctx.getImageData(0, 0, IMAGE_SIZE.width, IMAGE_SIZE.height * NUM_IMAGES);
-         var pixels = new Uint8Array(imageData.data.buffer);
-                      
-                      
-          texture = gl.createTexture();
-          // -- Init Texture
-          gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture);
-          gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-          gl.texImage3D(
-                        gl.TEXTURE_2D_ARRAY,
-                        0,
-                        gl.RGBA,
-                        IMAGE_SIZE.width,
-                        IMAGE_SIZE.height,
-                        NUM_IMAGES,
-                        0,
-                        gl.RGBA,
-                        gl.UNSIGNED_BYTE,
-                        pixels
-                        );
-          gl.uniform1i(shaderProg.uTexture, 0);
-          gl.useProgram(null);
-        }
-
         function setupTextures() {
             gl.useProgram(shaderProg);
             texture = gl.createTexture();
             var image = document.getElementById("animationImage");
             gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture);
             const levels = 1;
-            const width = 125;
-            const height = 125;
+            const sliceWidth = 125;
+            const sliceHeight = 125;
             const depth = 16;
-            gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, width, height, depth);
-            // Tell WebGL the size of one row
-            gl.pixelStorei(gl.UNPACK_ROW_LENGTH, IMAGE_SIZE.width);
-            for (let d = 0; d < depth; ++d) {
-                const xoff = d % 4 * width;
-                const yoff = (d / 4 | 0) * height;
-                // Tell WebGL where to start copying from
-                gl.pixelStorei(gl.UNPACK_SKIP_PIXELS, xoff);
-                gl.pixelStorei(gl.UNPACK_SKIP_ROWS, yoff);
-                const level = 0;
-                gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, level, 0, 0, d, width, height, 1, gl.RGBA, gl.UNSIGNED_BYTE, image);
-            }
-            //gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
+
+            //specifying the binding point (target) of the active texture
+            gl.texStorage3D(gl.TEXTURE_2D_ARRAY, levels, gl.RGBA8, sliceWidth, sliceHeight, depth);
+
+            texImageBySlice(gl, gl.TEXTURE_2D_ARRAY, levels, sliceWidth, sliceHeight, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
             gl.uniform1i(shaderProg.uTexture, 0);
             gl.useProgram(null);
         }
@@ -179,24 +137,28 @@
             const slicesAcross = image.width / sliceWidth;
             const slicesDown = image.height / sliceHeight;
 
-            // Tell WebGL the size of one row
-            gl.pixelStorei(gl.UNPACK_ROW_LENGTH, img.width);
+            // Tell WebGL the Number of pixels in a row.
+            gl.pixelStorei(gl.UNPACK_ROW_LENGTH, sliceWidth);
 
             for (let y = 0; y < slicesDown; ++y) {
                 for (let x = 0; x < slicesAcross; ++x) {
                     const xoff = x * sliceWidth;
                     const yoff = y * sliceHeight;
-                    const depth = y * slicesAcross + x;
-
+                    const d = y * slicesAcross + x;
                     // Tell WebGL where to start copying from
+                    //Number of pixel images skipped before the first pixel is read from memory
                     gl.pixelStorei(gl.UNPACK_SKIP_PIXELS, xoff);
+                    //Number of rows of pixel locations skipped before the first pixel is read from memory
                     gl.pixelStorei(gl.UNPACK_SKIP_ROWS, yoff);
-
-                    gl.texSubImage3D(target, level, 0, 0, depth,
-                        sliceWidth, sliceHeight, 1,
-                        format, type, image);
+                    const level = 0;
+                    //specifies a sub-rectangle of the current texture.
+                    gl.texSubImage3D(target, level, 0, 0, d, sliceWidth, sliceHeight, 1, format, type, image);
                 }
             }
+
+            gl.pixelStorei(gl.UNPACK_ROW_LENGTH, 0);
+            gl.pixelStorei(gl.UNPACK_SKIP_PIXELS, 0);
+            gl.pixelStorei(gl.UNPACK_SKIP_ROWS, 0);
         }
 
         function draw() {
